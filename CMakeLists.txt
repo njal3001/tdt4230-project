@@ -10,11 +10,18 @@ find_package(glm REQUIRED)
 
 add_executable(particle-system
     src/main.cpp
+    src/graphics.cpp
+    src/shader.cpp
+    src/file.cpp
+    src/particle.cpp
+    src/calc.cpp
 )
 
 include_directories(. ${GLEW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 target_link_libraries(particle-system glfw ${OPENGL_LIBRARIES}
     GLEW::GLEW glm::glm)
+
+file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
 add_custom_target(run
     COMMAND ./particle-system
