@@ -6,6 +6,7 @@
 #include "shader.hpp"
 #include "particle.hpp"
 #include "calc.hpp"
+#include "timer.hpp"
 
 int main()
 {
@@ -33,35 +34,31 @@ int main()
 
     Graphics::initialize(window);
 
-    Shader shader("assets/shaders/particle.vert",
+    RenderShader render_shader("assets/shaders/particle.vert",
             "assets/shaders/particle.frag");
-    if (!shader.valid())
+    ComputeShader compute_shader("assets/shaders/particle.comp");
+
+    if (!render_shader.valid() || !compute_shader.valid())
     {
         glfwTerminate();
         return EXIT_FAILURE;
     }
 
-    shader.bind();
+    render_shader.bind();
 
-    glm::mat4 vp = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-    shader.set_mat4("VP", vp);
+    glm::mat4 vp = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 1000.0f);
+    render_shader.set_mat4("VP", vp);
 
-    ParticleBuffer buffer(100000);
-    for (size_t i = 0; i < buffer.count(); i++)
-    {
-        buffer.positions[i].x = Calc::randrange(-10.0f, 10.0f);
-        buffer.positions[i].y = Calc::randrange(-10.0f, 10.0f);
-        buffer.positions[i].z = -30.0f;
-        buffer.colors[i].r = Calc::randrange(0.0f, 1.0f);
-        buffer.colors[i].g = Calc::randrange(0.0f, 1.0f);
-        buffer.colors[i].b = Calc::randrange(0.0f, 1.0f);
-        buffer.colors[i].a = 1.0f;
-    }
+    ParticleBuffer buffer(100000, &compute_shader);
+    ParticleRenderer renderer(&buffer, &render_shader);
 
-    ParticleRenderer renderer(&buffer);
+    Timer timer;
 
     while (!glfwWindowShouldClose(window))
     {
+        float dt = timer.delta();
+        std::cout << "dt: " << dt << '\n';
+        buffer.update(dt);
         Graphics::clear_screen();
         renderer.render();
 

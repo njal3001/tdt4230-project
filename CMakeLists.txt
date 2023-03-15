@@ -15,6 +15,7 @@ add_executable(particle-system
     src/file.cpp
     src/particle.cpp
     src/calc.cpp
+    src/timer.cpp
 )
 
 include_directories(. ${GLEW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})

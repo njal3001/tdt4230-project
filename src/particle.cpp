@@ -1,12 +1,29 @@
 #include "particle.hpp"
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include "calc.hpp"
 
-ParticleBuffer::ParticleBuffer(size_t count)
+ParticleBuffer::ParticleBuffer(size_t count, const ComputeShader *shader)
+    : shader(shader)
 {
     this->positions.resize(count);
     this->velocity.resize(count);
     this->colors.resize(count);
+
+    for (size_t i = 0; i < this->count(); i++)
+    {
+        this->positions[i].x = Calc::randrange(-10.0f, 10.0f);
+        this->positions[i].y = Calc::randrange(-10.0f, 10.0f);
+        this->positions[i].z = -500.0f;
+        this->colors[i].r = Calc::randrange(0.0f, 1.0f);
+        this->colors[i].g = Calc::randrange(0.0f, 1.0f);
+        this->colors[i].b = Calc::randrange(0.0f, 1.0f);
+        this->colors[i].a = 1.0f;
+
+        this->velocity[i].x = Calc::randrange(-25.0f, 25.0f);
+        this->velocity[i].y = Calc::randrange(-25.0f, 25.0f);
+        this->velocity[i].z = 0.0f;
+    }
 }
 
 size_t ParticleBuffer::count() const
@@ -14,8 +31,16 @@ size_t ParticleBuffer::count() const
     return this->positions.size();
 }
 
-ParticleRenderer::ParticleRenderer(const ParticleBuffer *buffer)
-    : buffer(buffer), models(buffer->count())
+void ParticleBuffer::update(float dt)
+{
+    for (size_t i = 0; i < this->count(); i++)
+    {
+        this->positions[i] += this->velocity[i] * dt;
+    }
+}
+
+ParticleRenderer::ParticleRenderer(const ParticleBuffer *buffer, const RenderShader *shader)
+    : buffer(buffer), models(buffer->count()), shader(shader)
 {
     std::vector<glm::vec3> positions =
     {
@@ -31,12 +56,9 @@ ParticleRenderer::ParticleRenderer(const ParticleBuffer *buffer)
         0, 2, 3,
     };
 
-    glGenVertexArrays(1, &this->vao);
-    glBindVertexArray(vao);
-
     glGenBuffers(1, &this->vbo_position);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_position);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3),
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3),
             positions.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3),
@@ -95,12 +117,15 @@ ParticleRenderer::~ParticleRenderer()
 
 void ParticleRenderer::render()
 {
+    this->shader->bind();
+
     for (size_t i = 0; i < this->buffer->count(); i++)
     {
         this->models[i] = glm::translate(glm::mat4(1.0f), this->buffer->positions[i]);
     }
 
     glBindVertexArray(this->vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, this->vbo_model);
     glBufferSubData(GL_ARRAY_BUFFER, 0,
             models.size() * sizeof(glm::mat4), models.data());

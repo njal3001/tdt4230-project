@@ -1,5 +1,6 @@
 #include "shader.hpp"
 #include <GL/glew.h>
+#include <iostream>
 #include <stdio.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "file.hpp"
@@ -28,42 +29,59 @@ static unsigned int compile_shader(const std::string &path, unsigned int type)
     return id;
 }
 
-Shader::Shader(const std::string &vertex_path, const std::string &fragment_path)
+Shader::Shader(const std::vector<Source> &sources)
 {
-    unsigned int vertex_id =
-        compile_shader(vertex_path, GL_VERTEX_SHADER);
-    if (!vertex_id)
-    {
-        this->id = 0;
-        return;
-    }
-
-    unsigned int fragment_id =
-        compile_shader(fragment_path, GL_FRAGMENT_SHADER);
-    if (!fragment_id)
-    {
-        glDeleteShader(fragment_id);
-        this->id = 0;
-        return;
-    }
-
     this->id = glCreateProgram();
-    glAttachShader(this->id, vertex_id);
-    glAttachShader(this->id, fragment_id);
+
+    std::vector<unsigned int> shader_ids;
+    for (int i = 0; i < sources.size(); i++)
+    {
+        const Source &source = sources[i];
+        unsigned int shader_id = compile_shader(source.path, source.type);
+
+        if (!shader_id)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                glDeleteShader(shader_ids[j]);
+            }
+
+            this->id = 0;
+            return;
+        }
+
+        glAttachShader(this->id, shader_id);
+
+        shader_ids.push_back(shader_id);
+    }
+
     glLinkProgram(this->id);
 
-    glDeleteShader(vertex_id);
-    glDeleteShader(fragment_id);
+    for (auto shader_id : shader_ids)
+    {
+        glDeleteShader(shader_id);
+    }
 
     GLint link_success;
     glGetProgramiv(this->id, GL_LINK_STATUS, &link_success);
     if (!link_success)
     {
         this->id = 0;
-        printf("Failed to link shaders: %s, %s", vertex_path.c_str(),
-                fragment_path.c_str());
+        std::cout << "Failed to link shaders: ";
+        for (size_t i = 0; i < sources.size(); i++)
+        {
+            std::cout << sources[i].path;
+            if (i < sources.size() - 1)
+            {
+                std::cout << ", ";
+            }
+        }
     }
 }
+
+RenderShader::RenderShader(const std::string &vertex_path, const std::string &fragment_path)
+    : Shader({{vertex_path, GL_VERTEX_SHADER}, {fragment_path, GL_FRAGMENT_SHADER}})
+{ }
 
 Shader::~Shader()
 {
@@ -80,31 +98,35 @@ void Shader::bind() const
     glUseProgram(this->id);
 }
 
-void Shader::set_float(const std::string &name, float value) const
+void RenderShader::set_float(const std::string &name, float value) const
 {
     glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
-void Shader::set_vec2(const std::string &name, const glm::vec2 &value) const
+void RenderShader::set_vec2(const std::string &name, const glm::vec2 &value) const
 {
     glUniform2fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const
+void RenderShader::set_vec3(const std::string &name, const glm::vec3 &value) const
 {
     glUniform3fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void Shader::set_vec4(const std::string &name, const glm::vec4 &value) const
+void RenderShader::set_vec4(const std::string &name, const glm::vec4 &value) const
 {
     glUniform4fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void Shader::set_mat4(const std::string &name, const glm::mat4 &value) const
+void RenderShader::set_mat4(const std::string &name, const glm::mat4 &value) const
 {
     glUniformMatrix4fv(glGetUniformLocation(this->id, name.c_str()), 1,
             GL_FALSE, glm::value_ptr(value));
 }
+
+ComputeShader::ComputeShader(const std::string &path)
+    : Shader({{path, GL_COMPUTE_SHADER}})
+{}
