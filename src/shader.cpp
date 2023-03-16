@@ -79,10 +79,6 @@ Shader::Shader(const std::vector<Source> &sources)
     }
 }
 
-RenderShader::RenderShader(const std::string &vertex_path, const std::string &fragment_path)
-    : Shader({{vertex_path, GL_VERTEX_SHADER}, {fragment_path, GL_FRAGMENT_SHADER}})
-{ }
-
 Shader::~Shader()
 {
     glDeleteProgram(this->id);
@@ -98,34 +94,40 @@ void Shader::bind() const
     glUseProgram(this->id);
 }
 
-void RenderShader::set_float(const std::string &name, float value) const
+void Shader::set_float(const std::string &name, float value) const
 {
     glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
-void RenderShader::set_vec2(const std::string &name, const glm::vec2 &value) const
+void Shader::set_vec2(const std::string &name, const glm::vec2 &value) const
 {
     glUniform2fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void RenderShader::set_vec3(const std::string &name, const glm::vec3 &value) const
+void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const
 {
     glUniform3fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void RenderShader::set_vec4(const std::string &name, const glm::vec4 &value) const
+void Shader::set_vec4(const std::string &name, const glm::vec4 &value) const
 {
     glUniform4fv(glGetUniformLocation(this->id, name.c_str()), 1,
             glm::value_ptr(value));
 }
 
-void RenderShader::set_mat4(const std::string &name, const glm::mat4 &value) const
+void Shader::set_mat4(const std::string &name, const glm::mat4 &value) const
 {
     glUniformMatrix4fv(glGetUniformLocation(this->id, name.c_str()), 1,
             GL_FALSE, glm::value_ptr(value));
 }
+
+RenderShader::RenderShader(const std::string &vertex_path,
+        const std::string &fragment_path)
+    : Shader({{vertex_path, GL_VERTEX_SHADER},
+            {fragment_path, GL_FRAGMENT_SHADER}})
+{ }
 
 ComputeShader::ComputeShader(const std::string &path)
     : Shader({{path, GL_COMPUTE_SHADER}})

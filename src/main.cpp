@@ -46,11 +46,11 @@ int main()
 
     render_shader.bind();
 
-    glm::mat4 vp = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 1000.0f);
+    glm::mat4 vp = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f,
+            0.1f, 1000.0f);
     render_shader.set_mat4("VP", vp);
 
-    ParticleBuffer buffer(100000, &compute_shader);
-    ParticleRenderer renderer(&buffer, &render_shader);
+    ParticleSystem system(128 * 10000, &compute_shader, &render_shader);
 
     Timer timer;
 
@@ -58,9 +58,9 @@ int main()
     {
         float dt = timer.delta();
         std::cout << "dt: " << dt << '\n';
-        buffer.update(dt);
+        system.update(dt);
         Graphics::clear_screen();
-        renderer.render();
+        system.render();
 
         glfwPollEvents();
         glfwSwapBuffers(window);
