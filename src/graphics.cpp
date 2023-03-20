@@ -8,6 +8,16 @@
 #    define APIENTRY
 #endif
 
+namespace
+{
+    int window_width;
+    int window_height;
+    double cursorx;
+    double cursory;
+    int view_width;
+    int view_height;
+};
+
 static void APIENTRY gl_message_callback(GLenum source, GLenum type, GLuint id,
                                   GLenum severity, GLsizei length,
                                   const GLchar *message,
@@ -72,8 +82,11 @@ static void APIENTRY gl_message_callback(GLenum source, GLenum type, GLuint id,
     printf("GL (%s:%s) %s\n", type_name, severity_name, message);
 }
 
-static void on_window_size_changed(GLFWwindow *win, int width, int height)
+static void on_window_size_changed(GLFWwindow *window, int width, int height)
 {
+    window_width = width;
+    window_height = height;
+
     float x = width / 2.0f;
     float y = height / 2.0f;
 
@@ -91,24 +104,52 @@ static void on_window_size_changed(GLFWwindow *win, int width, int height)
         sy = width / aspect;
     }
 
+    view_width = sx;
+    view_height = sy;
+
     glViewport(x - sx / 2.0f, y - sy / 2.0f, sx, sy);
+}
+
+static void on_cursor_position_changed(GLFWwindow *window, double x, double y)
+{
+    cursorx = x;
+    cursory = window_height - y;
 }
 
 void Graphics::initialize(GLFWwindow *window)
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
     glfwSetWindowSizeCallback(window, on_window_size_changed);
+    glfwSetCursorPosCallback(window, on_cursor_position_changed);
+
+    glfwGetWindowSize(window, &window_width, &window_height);
+    glfwGetCursorPos(window, &cursorx, &cursory);
+
+    on_window_size_changed(window, window_width, window_height);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     // Debug messages
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl_message_callback, NULL);
-
-    glEnable(GL_DEPTH_TEST);
 }
 
 void Graphics::clear_screen()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+glm::vec2 Graphics::get_normalized_cursor_position()
+{
+    glm::vec2 result;
+    result.x = cursorx - (window_width - view_width) / 2.0f;
+    result.y = cursory - (window_height - view_height) / 2.0f;
+
+    result.x /= (float)view_width;
+    result.y /= (float)view_height;
+
+    return result;
 }

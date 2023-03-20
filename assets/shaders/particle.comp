@@ -13,6 +13,12 @@ layout (std430, binding = 2) buffer velocity_buffer {
 };
 
 uniform float dt;
+uniform vec2 cursor;
+
+float mid(float low, float val, float high)
+{
+    return max(low, min(val, high));
+}
 
 void main()
 {
@@ -21,5 +27,16 @@ void main()
 	vec3 velocity = velocities[id];
 	vec3 position = positions[id];
 
-	positions[id] = position + velocity * dt;
+    vec3 cursor3 = vec3(2.0 * cursor.x - 1.0, 2.0 * cursor.y - 1.0, 0.0);
+    vec3 acceleration = normalize(cursor3 - position) / distance(cursor3, position);
+
+    vec3 new_position = position + velocity * dt;
+    vec3 new_velocity = velocity + acceleration * dt;
+    new_velocity = min(2.0f, length(new_velocity)) * normalize(new_velocity);
+
+    new_position.x = mid(-1.0f, new_position.x, 1.0f);
+    new_position.y = mid(-1.0f, new_position.y, 1.0f);
+
+	positions[id] = new_position;
+    velocities[id] = new_velocity;
 }

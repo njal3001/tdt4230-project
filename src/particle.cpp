@@ -1,7 +1,9 @@
 #include "particle.hpp"
 #include <GL/glew.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "calc.hpp"
+#include "graphics.hpp"
 
 ParticleSystem::ParticleSystem(size_t count, const ComputeShader *compute_shader,
         const RenderShader *render_shader)
@@ -13,17 +15,17 @@ ParticleSystem::ParticleSystem(size_t count, const ComputeShader *compute_shader
 
     for (size_t i = 0; i < this->count(); i++)
     {
-        this->positions[i].x = Calc::randrange(-10.0f, 10.0f);
-        this->positions[i].y = Calc::randrange(-10.0f, 10.0f);
-        this->positions[i].z = -50.0f;
+        this->positions[i].x = Calc::randrange(-1.0f, 1.0f);
+        this->positions[i].y = Calc::randrange(-1.0f, 1.0f);
+        this->positions[i].z = 0.0f;
 
         this->colors[i].r = Calc::randrange(0.0f, 1.0f);
         this->colors[i].g = Calc::randrange(0.0f, 1.0f);
         this->colors[i].b = Calc::randrange(0.0f, 1.0f);
         this->colors[i].a = 1.0f;
 
-        this->velocity[i].x = Calc::randrange(-25.0f, 25.0f);
-        this->velocity[i].y = Calc::randrange(-25.0f, 25.0f);
+        this->velocity[i].x = Calc::randrange(-1.0f, 1.0f);
+        this->velocity[i].y = Calc::randrange(-1.0f, 1.0f);
         this->velocity[i].z = 0.0f;
     }
 
@@ -67,6 +69,9 @@ void ParticleSystem::update(float dt)
 {
     this->compute_shader->bind();
     this->compute_shader->set_float("dt", dt);
+
+    glm::vec2 cursor = Graphics::get_normalized_cursor_position();
+    this->compute_shader->set_vec2("cursor", cursor);
 
     glDispatchCompute(this->count() / 128, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
