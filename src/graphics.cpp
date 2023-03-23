@@ -127,9 +127,11 @@ void Graphics::initialize(GLFWwindow *window)
     on_window_size_changed(window, window_width, window_height);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    // glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+    // Disable VSync
+    glfwSwapInterval(0);
 
     // Debug messages
     glEnable(GL_DEBUG_OUTPUT);
@@ -148,8 +150,8 @@ glm::vec2 Graphics::get_normalized_cursor_position()
     result.x = cursorx - (window_width - view_width) / 2.0f;
     result.y = cursory - (window_height - view_height) / 2.0f;
 
-    result.x /= (float)view_width;
-    result.y /= (float)view_height;
+    result.x /= static_cast<float>(view_width);
+    result.y /= static_cast<float>(view_height);
 
     return result;
 }

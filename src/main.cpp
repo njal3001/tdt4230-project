@@ -46,10 +46,6 @@ int main()
 
     render_shader.bind();
 
-    // glm::mat4 vp = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f,
-    //         0.1f, 1000.0f);
-    // render_shader.set_mat4("VP", vp);
-
     ParticleSystem system(128 * 10000, &compute_shader, &render_shader);
 
     Timer frame_timer;
@@ -60,7 +56,17 @@ int main()
     {
         float dt = frame_timer.delta();
 
+        glm::vec2 cursor = Graphics::get_normalized_cursor_position();
+        glm::vec3 ndc_cursor = glm::vec3(2.0f * cursor.x - 1.0f, 2.0f * cursor.y - 1.0f, 0.0f);
+
         update_timer.delta();
+
+        int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+        if (mouse_state == GLFW_PRESS)
+        {
+            system.spawn(10000, ndc_cursor);
+        }
+
         system.update(dt);
         printf("Update: %f\n", update_timer.delta());
 
@@ -72,7 +78,7 @@ int main()
         glfwSwapBuffers(window);
 
         printf("Render: %f\n", render_timer.delta());
-        printf("Total: %f\n", dt);
+        printf("Total: %f (%f FPS)\n", dt, 1.0f / dt);
     }
 
     glfwTerminate();
