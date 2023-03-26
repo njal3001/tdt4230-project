@@ -94,33 +94,54 @@ void Shader::bind() const
     glUseProgram(this->id);
 }
 
+void Shader::set_float(unsigned int location, float value) const
+{
+    glUniform1f(location, value);
+}
+
+void Shader::set_vec2(unsigned int location, const glm::vec2 &value) const
+{
+    glUniform2fv(location, 1, glm::value_ptr(value));
+}
+
+void Shader::set_vec3(unsigned int location, const glm::vec3 &value) const
+{
+    glUniform3fv(location, 1, glm::value_ptr(value));
+}
+
+void Shader::set_vec4(unsigned int location, const glm::vec4 &value) const
+{
+    glUniform4fv(location, 1, glm::value_ptr(value));
+}
+
+void Shader::set_mat4(unsigned int location, const glm::mat4 &value) const
+{
+    glUniformMatrix4fv(location, 1, false, glm::value_ptr(value));
+}
+
 void Shader::set_float(const std::string &name, float value) const
 {
-    glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
+    this->set_float(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_vec2(const std::string &name, const glm::vec2 &value) const
 {
-    glUniform2fv(glGetUniformLocation(this->id, name.c_str()), 1,
-            glm::value_ptr(value));
+    this->set_vec2(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const
 {
-    glUniform3fv(glGetUniformLocation(this->id, name.c_str()), 1,
-            glm::value_ptr(value));
+    this->set_vec3(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_vec4(const std::string &name, const glm::vec4 &value) const
 {
-    glUniform4fv(glGetUniformLocation(this->id, name.c_str()), 1,
-            glm::value_ptr(value));
+    this->set_vec4(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_mat4(const std::string &name, const glm::mat4 &value) const
 {
-    glUniformMatrix4fv(glGetUniformLocation(this->id, name.c_str()), 1,
-            GL_FALSE, glm::value_ptr(value));
+    this->set_mat4(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 RenderShader::RenderShader(const std::string &vertex_path,

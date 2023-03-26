@@ -11,6 +11,8 @@ private:
     std::vector<float> lifes;
     std::vector<glm::vec4> colors;
 
+    size_t last_particle_used;
+
     const ComputeShader *compute_shader;
     const RenderShader *render_shader;
     unsigned int vao;
@@ -18,16 +20,15 @@ private:
     unsigned int vbo_velocity;
     unsigned int vbo_life;
     unsigned int vbo_color;
-    size_t last_particle_used;
 
 public:
     ParticleSystem(size_t count, const ComputeShader *compute_shader,
             const RenderShader *render_shader);
     ~ParticleSystem();
 
-    void update(float dt);
-    void render() const;
+    void update(float dt, const glm::vec3 &attractor);
+    void render(const glm::mat4 &view_projection) const;
 
-    void spawn(size_t spawn_count, glm::vec3 position);
+    void spawn(size_t spawn_count, const glm::vec3 &position);
     size_t count() const;
 };

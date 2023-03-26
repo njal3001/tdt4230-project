@@ -7,32 +7,12 @@
 
 ParticleSystem::ParticleSystem(size_t count, const ComputeShader *compute_shader,
         const RenderShader *render_shader)
-    : compute_shader(compute_shader), render_shader(render_shader), last_particle_used(0)
+    : last_particle_used(0), compute_shader(compute_shader), render_shader(render_shader)
 {
     this->positions.resize(count);
     this->velocities.resize(count);
     this->colors.resize(count);
     this->lifes.resize(count, 0.0f);
-
-    /*
-    for (size_t i = 0; i < count; i++)
-    {
-        this->positions[i].x = Calc::randrange(0.0f, 1.0f);
-        this->positions[i].y = Calc::randrange(0.0f, 1.0f);
-        this->positions[i].z = 0.0f;
-
-        this->colors[i].r = Calc::randrange(0.0f, 1.0f);
-        this->colors[i].g = Calc::randrange(0.0f, 1.0f);
-        this->colors[i].b = Calc::randrange(0.0f, 1.0f);
-        this->colors[i].a = 1.0f;
-
-        this->velocities[i].x = Calc::randrange(-1.0f, 1.0f);
-        this->velocities[i].y = Calc::randrange(-1.0f, 1.0f);
-        this->velocities[i].z = 0.0f;
-
-        this->lifes[i] = 2.0f;
-    }
-    */
 
     // TODO: Needed?
     glCreateVertexArrays(1, &this->vao);
@@ -73,7 +53,7 @@ size_t ParticleSystem::count() const
     return this->positions.size();
 }
 
-void ParticleSystem::spawn(size_t spawn_count, glm::vec3 position)
+void ParticleSystem::spawn(size_t spawn_count, const glm::vec3 &position)
 {
     if (spawn_count + this->last_particle_used > this->count())
     {
@@ -102,9 +82,9 @@ void ParticleSystem::spawn(size_t spawn_count, glm::vec3 position)
 
         velocity_map[i].x = Calc::randrange(-1.0f, 1.0f);
         velocity_map[i].y = Calc::randrange(-1.0f, 1.0f);
-        velocity_map[i].z = 0.0f;
+        velocity_map[i].z = Calc::randrange(-1.0f, 1.0f);
 
-        life_map[i] = 3.0f;
+        life_map[i] = 1000.0f;
     }
 
     this->last_particle_used += spawn_count;
@@ -115,20 +95,20 @@ void ParticleSystem::spawn(size_t spawn_count, glm::vec3 position)
     glUnmapNamedBuffer(this->vbo_color);
 }
 
-void ParticleSystem::update(float dt)
+void ParticleSystem::update(float dt, const glm::vec3 &attractor)
 {
     this->compute_shader->bind();
-    this->compute_shader->set_float("dt", dt);
-
-    glm::vec2 cursor = Graphics::get_normalized_cursor_position();
-    this->compute_shader->set_vec2("cursor", cursor);
+    this->compute_shader->set_float(0, dt);
+    this->compute_shader->set_vec3(1, attractor);
 
     glDispatchCompute(this->count() / 128, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-void ParticleSystem::render() const
+void ParticleSystem::render(const glm::mat4 &view_projection) const
 {
     this->render_shader->bind();
+    this->render_shader->set_mat4(0, view_projection);
+
     glDrawArraysInstanced(GL_POINTS, 0, 1, this->count());
 }

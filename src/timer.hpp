@@ -8,5 +8,6 @@ private:
 public:
     Timer();
 
+    void reset();
     float delta();
 };

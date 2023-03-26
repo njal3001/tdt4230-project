@@ -1,16 +1,21 @@
 #version 450 core
 
+out layout(location = 0) vec4 color_out;
+
 layout (std430, binding = 0) buffer position_buffer {
 	vec4 positions[];
 };
 layout (std430, binding = 1) buffer color_buffer {
 	vec4 colors[];
 };
+layout (std430, binding = 2) buffer velocity_buffer {
+	vec4 velocities[];
+};
 layout (std430, binding = 3) buffer life_buffer {
 	float lifes[];
 };
 
-out layout(location = 0) vec4 color_out;
+uniform layout(location = 0) mat4 view_projection;
 
 void main()
 {
@@ -20,7 +25,7 @@ void main()
 
     if (life > 0.0)
     {
-        gl_Position = vec4(position.x, position.y, 0.0, 1.0);
+        gl_Position = view_projection * vec4(position, 1.0);
     }
     else
     {

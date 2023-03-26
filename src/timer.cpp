@@ -5,6 +5,11 @@ Timer::Timer()
     : previous_time(glfwGetTime())
 {}
 
+void Timer::reset()
+{
+    this->previous_time = glfwGetTime();
+}
+
 float Timer::delta()
 {
     float now = glfwGetTime();
