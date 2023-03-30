@@ -46,9 +46,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    render_shader.bind();
-
-    ParticleSystem system(128 * 10000, &compute_shader, &render_shader);
+    ParticleSystem system(128 * 100, &compute_shader, &render_shader);
 
     Timer frame_timer;
     Timer update_timer;
@@ -63,15 +61,6 @@ int main()
         float dt = frame_timer.delta();
 
         update_timer.reset();
-
-        Ray camera_ray = camera.ray_from_cursor();
-        glm::vec3 spawn_position = camera_ray.origin + camera_ray.direction * 5.0f;
-
-        int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-        if (mouse_state == GLFW_PRESS)
-        {
-            system.spawn(10000, spawn_position);
-        }
 
         float camera_move_amount = camera_speed * dt;
         float camera_rotation_amount = camera_rotation_speed * dt;
@@ -108,7 +97,7 @@ int main()
             camera.rotate(-camera_rotation_amount, glm::vec3(0.0f, 1.0f, 0.0f));
         }
 
-        system.update(dt, spawn_position);
+        system.update(dt);
         printf("Update: %f\n", update_timer.delta());
 
         render_timer.reset();

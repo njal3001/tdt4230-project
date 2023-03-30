@@ -126,9 +126,9 @@ void Graphics::initialize(GLFWwindow *window)
 
     on_window_size_changed(window, window_width, window_height);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     // Disable VSync
     glfwSwapInterval(0);

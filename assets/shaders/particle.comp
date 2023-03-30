@@ -11,12 +11,8 @@ layout (std430, binding = 1) buffer color_buffer {
 layout (std430, binding = 2) buffer velocity_buffer {
 	vec4 velocities[];
 };
-layout (std430, binding = 3) buffer life_buffer {
-	float lifes[];
-};
 
 uniform layout(location = 0) float dt;
-uniform layout(location = 1) vec3 attractor;
 
 float mid(float low, float val, float high)
 {
@@ -30,29 +26,13 @@ void main()
     vec3 position = positions[id].xyz;
 	vec3 velocity = velocities[id].xyz;
     vec4 color = colors[id];
-    float life = lifes[id];
 
-    if (life <= 0.0)
-    {
-        return;
-    }
-
-    vec3 acceleration = vec3(0.0);
-
-    float attractor_distance = distance(attractor, position);
-    if (attractor_distance >= 0.01)
-    {
-        acceleration = 5.0 * normalize(attractor - position) /
-            max(attractor_distance, 0.5);
-    }
-
-    vec3 new_position = position + velocity * dt;
-    vec3 new_velocity = velocity + acceleration * dt;
-    new_velocity = min(2.0, length(new_velocity)) * normalize(new_velocity);
-
-    float new_life = life - dt;
-
-	positions[id].xyz = new_position;
-    velocities[id].xyz = new_velocity;
-    lifes[id] = new_life;
+ //    vec3 acceleration = vec3(0.0);
+	//
+ //    vec3 new_position = position + velocity * dt;
+ //    vec3 new_velocity = velocity + acceleration * dt;
+ //    new_velocity = min(2.0, length(new_velocity)) * normalize(new_velocity);
+	//
+	// positions[id].xyz = new_position;
+ //    velocities[id].xyz = new_velocity;
 }
