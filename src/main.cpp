@@ -1,14 +1,11 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <vector>
-#include <glm/gtx/string_cast.hpp>
 #include "graphics.hpp"
 #include "shader.hpp"
-#include "particle.hpp"
+#include "slimesimulator.hpp"
 #include "calc.hpp"
 #include "timer.hpp"
-#include "camera.hpp"
 
 int main()
 {
@@ -36,92 +33,61 @@ int main()
 
     Graphics::initialize(window);
 
-    RenderShader render_shader("assets/shaders/particle.vert",
-            "assets/shaders/particle.frag");
-    ComputeShader compute_shader("assets/shaders/particle.comp");
+    RenderShader render_shader("assets/shaders/render.vert",
+            "assets/shaders/render.frag");
+    assert(render_shader.valid());
 
-    if (!render_shader.valid() || !compute_shader.valid())
-    {
-        glfwTerminate();
-        return EXIT_FAILURE;
-    }
-
-    render_shader.bind();
-
-    ParticleSystem system(128 * 10000, &compute_shader, &render_shader);
+    SlimeSimulator simulator(100000, glm::ivec2(1920, 1080));
 
     Timer frame_timer;
-    Timer update_timer;
-    Timer render_timer;
 
-    Camera camera(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-    float camera_speed = 2.0f;
-    float camera_rotation_speed = 0.5f;
+    render_shader.bind();
+    glBindTextureUnit(0, simulator.output()->get_id());
+
+    glm::vec4 vertices[] =
+    {
+        glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
+        glm::vec4(-1.0f, -1.0f, 0.0f, 0.0f),
+        glm::vec4(1.0f, -1.0f, 1.0f, 0.0f),
+        glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
+        glm::vec4(1.0f, -1.0f, 1.0f, 0.0f),
+        glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+    };
+
+    unsigned int vao;
+    unsigned int vbo;
+
+    glCreateVertexArrays(1, &vao);
+    glCreateBuffers(1, &vbo);
+    glNamedBufferData(vbo, sizeof(vertices), vertices, GL_STATIC_COPY);
+
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 4 * sizeof(float));
+
+    glEnableVertexArrayAttrib(vao, 0);
+    glEnableVertexArrayAttrib(vao, 1);
+
+    glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
+
+    glVertexArrayAttribBinding(vao, 0, 0);
+    glVertexArrayAttribBinding(vao, 1, 0);
 
     while (!glfwWindowShouldClose(window))
     {
         float dt = frame_timer.delta();
 
-        update_timer.reset();
+        simulator.update(dt);
 
-        Ray camera_ray = camera.ray_from_cursor();
-        glm::vec3 spawn_position = camera_ray.origin + camera_ray.direction * 5.0f;
-
-        int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-        if (mouse_state == GLFW_PRESS)
-        {
-            system.spawn(10000, spawn_position);
-        }
-
-        float camera_move_amount = camera_speed * dt;
-        float camera_rotation_amount = camera_rotation_speed * dt;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        {
-            camera.move_forward(camera_move_amount);
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        {
-            camera.move_backward(camera_move_amount);
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        {
-            camera.move_right(camera_move_amount);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        {
-            camera.move_left(camera_move_amount);
-        }
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        {
-            camera.rotate(-camera_rotation_amount, glm::vec3(1.0f, 0.0f, 0.0f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        {
-            camera.rotate(camera_rotation_amount, glm::vec3(1.0f, 0.0f, 0.0f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        {
-            camera.rotate(camera_rotation_amount, glm::vec3(0.0f, 1.0f, 0.0f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        {
-            camera.rotate(-camera_rotation_amount, glm::vec3(0.0f, 1.0f, 0.0f));
-        }
-
-        system.update(dt, spawn_position);
-        printf("Update: %f\n", update_timer.delta());
-
-        render_timer.reset();
         Graphics::clear_screen();
 
-        system.render(camera.matrix());
+        glBindVertexArray(vao);
+        render_shader.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glfwSwapBuffers(window);
-        printf("Render: %f\n", render_timer.delta());
-
         glfwPollEvents();
 
-        printf("Total: %f (%f FPS)\n", dt, 1.0f / dt);
+        std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
     }
 
     glfwTerminate();

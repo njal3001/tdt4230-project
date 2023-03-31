@@ -75,14 +75,14 @@ void ParticleSystem::spawn(size_t spawn_count, const glm::vec3 &position)
         position_map[i].y = position.y;
         position_map[i].z = position.z;
 
-        color_map[i].r = Calc::randrange(0.0f, 1.0f);
-        color_map[i].g = Calc::randrange(0.0f, 1.0f);
-        color_map[i].b = Calc::randrange(0.0f, 1.0f);
+        color_map[i].r = Calc::frandrange(0.0f, 1.0f);
+        color_map[i].g = Calc::frandrange(0.0f, 1.0f);
+        color_map[i].b = Calc::frandrange(0.0f, 1.0f);
         color_map[i].a = 1.0f;
 
-        velocity_map[i].x = Calc::randrange(-1.0f, 1.0f);
-        velocity_map[i].y = Calc::randrange(-1.0f, 1.0f);
-        velocity_map[i].z = Calc::randrange(-1.0f, 1.0f);
+        velocity_map[i].x = Calc::frandrange(-1.0f, 1.0f);
+        velocity_map[i].y = Calc::frandrange(-1.0f, 1.0f);
+        velocity_map[i].z = Calc::frandrange(-1.0f, 1.0f);
 
         life_map[i] = 1000.0f;
     }

@@ -18,6 +18,8 @@ add_executable(particle-system
     src/timer.cpp
     src/camera.cpp
     src/ray.cpp
+    src/slimesimulator.cpp
+    src/texture.cpp
 )
 
 include_directories(. ${GLEW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})

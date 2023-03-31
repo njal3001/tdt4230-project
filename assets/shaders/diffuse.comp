@@ -1,0 +1,45 @@
+#version 450 core
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) uniform image2D input_image;
+layout(rgba32f, binding = 1) uniform image2D output_image;
+
+uniform layout(location = 2) float dt;
+
+void main()
+{
+	uvec3 id = gl_GlobalInvocationID;
+    ivec2 bounds = imageSize(input_image);
+
+    if (id.x >= bounds.x || id.y >= bounds.y)
+    {
+        return;
+    }
+
+    vec4 sum = vec4(0.0);
+    for (int oy = -1; oy <= 1; oy++)
+    {
+        for (int ox = -1; ox <= 1; ox++)
+        {
+            int x = ox + int(id.x);
+            int y = oy + int(id.y);
+
+            if (x >= 0 && x < bounds.x && y >= 0 && y < bounds.y)
+            {
+                sum += imageLoad(input_image, ivec2(x, y));
+            }
+        }
+    }
+
+    vec4 current_value = imageLoad(input_image, ivec2(id.x, id.y));
+
+    vec4 average = sum / 9.0;
+
+    // TODO: Better way to interpolate?
+    average = mix(current_value, average, 0.1 * dt);
+
+    vec4 diffused = max(vec4(0.0), average - 0.5 * dt);
+
+    imageStore(output_image, ivec2(id.x, id.y), diffused);
+}

@@ -94,6 +94,11 @@ void Shader::bind() const
     glUseProgram(this->id);
 }
 
+void Shader::set_int(unsigned int location, int value) const
+{
+    glUniform1i(location, value);
+}
+
 void Shader::set_float(unsigned int location, float value) const
 {
     glUniform1f(location, value);
@@ -117,6 +122,11 @@ void Shader::set_vec4(unsigned int location, const glm::vec4 &value) const
 void Shader::set_mat4(unsigned int location, const glm::mat4 &value) const
 {
     glUniformMatrix4fv(location, 1, false, glm::value_ptr(value));
+}
+
+void Shader::set_int(const std::string &name, int value) const
+{
+    this->set_int(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_float(const std::string &name, float value) const

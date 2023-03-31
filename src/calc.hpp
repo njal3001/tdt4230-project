@@ -1,6 +1,10 @@
 #pragma once
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Calc
 {
-    float randrange(float min, float max);
+    float frand();
+    float frandrange(float min, float max);
+
+    glm::vec2 randdir();
 };
