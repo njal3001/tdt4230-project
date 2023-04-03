@@ -41,14 +41,14 @@ private:
     const unsigned int diffuse_speed_index = 4;
     const unsigned int decay_speed_index = 5;
 
-    const float move_speed = 300.0f;
-    const float turn_speed = 1440.0f;
-    const float sense_spacing = 45.0f;
-    const int sense_distance = 9;
-    const int sense_size = 1;
+    float move_speed = 300.0f;
+    float turn_speed = 1440.0f;
+    float sense_spacing = 45.0f;
+    int sense_distance = 9;
+    int sense_size = 1;
 
-    const float diffuse_speed = 0.1f;
-    const float decay_speed = 0.5f;
+    float diffuse_speed = 0.1f;
+    float decay_speed = 0.5f;
 
 public:
     SlimeSimulator(size_t num_agents, const glm::ivec2 &size);
@@ -56,4 +56,6 @@ public:
 
     void update(float dt);
     const Texture *output() const;
+
+    void update_debug_window();
 };

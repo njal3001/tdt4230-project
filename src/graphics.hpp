@@ -6,7 +6,10 @@
 namespace Graphics
 {
     void initialize(GLFWwindow *window);
-    void clear_screen();
+    void shutdown();
+
+    void begin_frame();
+    void end_frame();
 
     glm::vec2 get_normalized_cursor_position();
 };

@@ -1,7 +1,9 @@
 #include "slimesimulator.hpp"
 #include <GL/glew.h>
-#include "calc.hpp"
+#include <imgui.h>
 #include <cmath>
+#include <limits>
+#include "calc.hpp"
 
 SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     : num_agents(num_agents), size(size),
@@ -38,13 +40,6 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     this->agent_shader.bind();
     this->agent_shader.set_ivec2(this->bounds_index, this->size);
     this->agent_shader.set_int(this->num_agents_index, num_agents);
-    this->agent_shader.set_float(this->move_speed_index, this->move_speed);
-    this->agent_shader.set_float(this->turn_speed_index, this->turn_speed);
-    this->agent_shader.set_float(this->sense_spacing_index,
-            this->sense_spacing);
-    this->agent_shader.set_int(this->sense_distance_index,
-            this->sense_distance);
-    this->agent_shader.set_int(this->sense_size_index, this->sense_size);
 
     glBindImageTexture(this->trail_texture_index, this->trail_texture.get_id(),
             0, false, 0, GL_READ_ONLY, GL_RGBA32F);
@@ -75,6 +70,13 @@ void SlimeSimulator::update(float dt)
 {
     this->agent_shader.bind();
     this->agent_shader.set_float(this->dt_index, dt);
+    this->agent_shader.set_float(this->move_speed_index, this->move_speed);
+    this->agent_shader.set_float(this->turn_speed_index, this->turn_speed);
+    this->agent_shader.set_float(this->sense_spacing_index,
+            this->sense_spacing);
+    this->agent_shader.set_int(this->sense_distance_index,
+            this->sense_distance);
+    this->agent_shader.set_int(this->sense_size_index, this->sense_size);
 
     glDispatchCompute(std::ceil(this->num_agents / 128.0f), 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -94,4 +96,18 @@ void SlimeSimulator::update(float dt)
 const Texture *SlimeSimulator::output() const
 {
     return &this->trail_texture;
+}
+
+void SlimeSimulator::update_debug_window()
+{
+    ImGui::DragFloat("Move Speed", &this->move_speed, 1.0f, 0.0f,
+            std::numeric_limits<float>::max());
+    ImGui::DragFloat("Turn Speed", &this->turn_speed, 1.0f, 0.0f,
+            std::numeric_limits<float>::max());
+    ImGui::DragFloat("Sense Spacing", &this->sense_spacing, 1.0f, 0.0f, 180.0f);
+    ImGui::DragInt("Sense Distance", &this->sense_distance, 1, 1, 100);
+    ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 10);
+
+    ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.1f, 0.0f, 1.0f);
+    ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.1f, 0.0f, 1.0f);
 }

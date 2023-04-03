@@ -37,7 +37,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(5000, glm::ivec2(960, 540));
+    SlimeSimulator simulator(50000, glm::ivec2(1920, 1080));
 
     Timer frame_timer;
 
@@ -74,15 +74,17 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        Graphics::begin_frame();
+        simulator.update_debug_window();
+
         float dt = frame_timer.delta();
-
         simulator.update(dt);
-
-        Graphics::clear_screen();
 
         glBindVertexArray(vao);
         render_shader.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        Graphics::end_frame();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -90,6 +92,7 @@ int main()
         std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
     }
 
+    Graphics::shutdown();
     glfwTerminate();
 
     return EXIT_SUCCESS;
