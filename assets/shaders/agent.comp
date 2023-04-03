@@ -1,11 +1,14 @@
 #version 450 core
 
+#define PI 3.1415926535
+
 layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent
 {
     vec2 position;
-    vec2 velocity;
+    float angle;
+    float padding;
 };
 
 layout (std430, binding = 0) buffer agent_buffer {
@@ -14,8 +17,64 @@ layout (std430, binding = 0) buffer agent_buffer {
 
 layout(rgba32f, binding = 0) uniform image2D agent_image;
 
-uniform layout(location = 2) int num_agents;
+uniform layout(location = 2) ivec2 bounds;
 uniform layout(location = 3) float dt;
+uniform layout(location = 4) int num_agents;
+
+uniform layout(location = 5) float move_speed;
+uniform layout(location = 6) float turn_speed;
+uniform layout(location = 7) float sense_spacing;
+uniform layout(location = 8) int sense_distance;
+uniform layout(location = 9) int sense_size;
+
+float mid(float lower, float value, float upper)
+{
+    return max(lower, min(value, upper));
+}
+
+float to_rad(float deg)
+{
+    return deg * PI / 180.0;
+}
+
+uint hash(uint state)
+{
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
+}
+
+float scale_to_unit(uint value)
+{
+    return value / 4294967295.0;
+}
+
+float sense(Agent agent, float angle_offset)
+{
+    float sense_angle = agent.angle + angle_offset;
+    vec2 sense_direction = vec2(cos(sense_angle), sin(sense_angle));
+
+    ivec2 sense_center =
+        ivec2(agent.position + sense_direction * sense_distance);
+
+    float sum = 0.0;
+    for (int ox = -sense_size; ox <= sense_size; ox++)
+    {
+        for (int oy = -sense_size; oy <= sense_size; oy++)
+        {
+            int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
+            int y = int(mid(0, sense_center.y + oy, bounds.y - 1.0));
+
+            sum += dot(vec4(1.0), imageLoad(agent_image, ivec2(x, y)));
+        }
+    }
+
+    return sum;
+}
 
 void main()
 {
@@ -25,33 +84,52 @@ void main()
         return;
     }
 
-    ivec2 bounds = imageSize(agent_image);
+    Agent agent = agents[id];
 
-    agents[id].position += agents[id].velocity * dt;
+    uint rand = hash(uint(agent.position.x + agent.position.y * bounds.x));
 
-    ivec2 pixel_position = ivec2(agents[id].position);
+    float sense_spacing_rad = to_rad(sense_spacing);
+    float sense_forward = sense(agent, 0.0);
+    float sense_right = sense(agent, sense_spacing_rad);
+    float sense_left = sense(agent, -sense_spacing_rad);
 
-    if (agents[id].position.x < 0.0)
+    float turn_speed_rad = to_rad(turn_speed);
+    float random_turn_weight = scale_to_unit(rand);
+
+    float new_angle = agent.angle;
+    if (sense_forward > sense_right && sense_forward > sense_left)
     {
-        agents[id].position.x = 0.0;
-        agents[id].velocity.x *= -1.0;
+        new_angle += 0.0;
     }
-    else if (agents[id].position.x >= bounds.x - 1)
+    else if (sense_forward < sense_right && sense_forward < sense_left)
     {
-        agents[id].position.x = bounds.x - 1;
-        agents[id].velocity.x *= -1.0;
+        new_angle += 2.0 * (random_turn_weight - 1.0) * turn_speed_rad * dt;
     }
-    if (agents[id].position.y < 0.0)
+    else if (sense_left < sense_right)
     {
-        agents[id].position.y = 0.0;
-        agents[id].velocity.y *= -1.0;
+        new_angle += random_turn_weight * turn_speed_rad * dt;
     }
-    else if (agents[id].position.y >= bounds.y - 1)
+    else if (sense_right < sense_left)
     {
-        agents[id].position.y = bounds.y - 1;
-        agents[id].velocity.y *= -1.0;
+        new_angle -= random_turn_weight * turn_speed_rad * dt;
     }
 
+    vec2 velocity = vec2(cos(new_angle), sin(new_angle)) * move_speed;
+    vec2 new_position = agent.position + velocity * dt;
+
+    if (new_position.x < 0.0 || new_position.x >= bounds.x ||
+            new_position.y < 0.0 || new_position.y >= bounds.y)
+    {
+        new_position.x = mid(0.0, new_position.x, bounds.x - 1.0);
+        new_position.y = mid(0.0, new_position.y, bounds.y - 1.0);
+
+        uint rand = hash(rand);
+        new_angle = scale_to_unit(rand) * 2.0 * PI;
+    }
+
+    agents[id].position = new_position;
+    agents[id].angle = new_angle;
+
+    ivec2 pixel_position = ivec2(new_position);
     imageStore(agent_image, pixel_position, vec4(1.0));
-
 }

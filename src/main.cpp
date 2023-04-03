@@ -37,7 +37,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(100000, glm::ivec2(1920, 1080));
+    SlimeSimulator simulator(5000, glm::ivec2(960, 540));
 
     Timer frame_timer;
 

@@ -5,12 +5,15 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(rgba32f, binding = 0) uniform image2D input_image;
 layout(rgba32f, binding = 1) uniform image2D output_image;
 
-uniform layout(location = 2) float dt;
+uniform layout(location = 2) ivec2 bounds;
+uniform layout(location = 3) float dt;
+
+uniform layout(location = 4) float diffuse_speed;
+uniform layout(location = 5) float decay_speed;
 
 void main()
 {
 	uvec3 id = gl_GlobalInvocationID;
-    ivec2 bounds = imageSize(input_image);
 
     if (id.x >= bounds.x || id.y >= bounds.y)
     {
@@ -37,9 +40,9 @@ void main()
     vec4 average = sum / 9.0;
 
     // TODO: Better way to interpolate?
-    average = mix(current_value, average, 0.1 * dt);
+    average = mix(current_value, average, diffuse_speed * dt);
 
-    vec4 diffused = max(vec4(0.0), average - 0.5 * dt);
+    vec4 diffused = max(vec4(0.0), average - decay_speed * dt);
 
     imageStore(output_image, ivec2(id.x, id.y), diffused);
 }

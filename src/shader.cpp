@@ -109,6 +109,11 @@ void Shader::set_vec2(unsigned int location, const glm::vec2 &value) const
     glUniform2fv(location, 1, glm::value_ptr(value));
 }
 
+void Shader::set_ivec2(unsigned int location, const glm::ivec2 &value) const
+{
+    glUniform2iv(location, 1, glm::value_ptr(value));
+}
+
 void Shader::set_vec3(unsigned int location, const glm::vec3 &value) const
 {
     glUniform3fv(location, 1, glm::value_ptr(value));
@@ -137,6 +142,11 @@ void Shader::set_float(const std::string &name, float value) const
 void Shader::set_vec2(const std::string &name, const glm::vec2 &value) const
 {
     this->set_vec2(glGetUniformLocation(this->id, name.c_str()), value);
+}
+
+void Shader::set_ivec2(const std::string &name, const glm::ivec2 &value) const
+{
+    this->set_ivec2(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const
