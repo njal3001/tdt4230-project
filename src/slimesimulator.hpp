@@ -30,25 +30,28 @@ private:
 
     const unsigned int bounds_index = 2;
     const unsigned int dt_index = 3;
+    const unsigned int time_index = 4;
 
-    const unsigned int num_agents_index = 4;
-    const unsigned int move_speed_index = 5;
-    const unsigned int turn_speed_index = 6;
-    const unsigned int sense_spacing_index = 7;
-    const unsigned int sense_distance_index = 8;
-    const unsigned int sense_size_index = 9;
+    const unsigned int num_agents_index = 5;
+    const unsigned int move_speed_index = 6;
+    const unsigned int turn_speed_index = 7;
+    const unsigned int trail_weight_index = 8;
+    const unsigned int sense_spacing_index = 9;
+    const unsigned int sense_distance_index = 10;
+    const unsigned int sense_size_index = 11;
 
-    const unsigned int diffuse_speed_index = 4;
-    const unsigned int decay_speed_index = 5;
+    const unsigned int diffuse_speed_index = 5;
+    const unsigned int decay_speed_index = 6;
 
-    float move_speed = 300.0f;
-    float turn_speed = 1440.0f;
+    float move_speed = 30.0f;
+    float turn_speed = 360.0f;
+    float trail_weight = 1.0f;
     float sense_spacing = 45.0f;
     int sense_distance = 9;
     int sense_size = 1;
 
-    float diffuse_speed = 0.1f;
-    float decay_speed = 0.5f;
+    float diffuse_speed = 0.5f;
+    float decay_speed = 0.25f;
 
 public:
     SlimeSimulator(size_t num_agents, const glm::ivec2 &size);

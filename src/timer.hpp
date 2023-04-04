@@ -10,4 +10,6 @@ public:
 
     void reset();
     float delta();
+
+    static float time();
 };

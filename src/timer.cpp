@@ -19,3 +19,8 @@ float Timer::delta()
 
     return now - prev;
 }
+
+float Timer::time()
+{
+    return glfwGetTime();
+}

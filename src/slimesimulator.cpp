@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include "calc.hpp"
+#include "timer.hpp"
 
 SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     : num_agents(num_agents), size(size),
@@ -16,13 +17,20 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
 
+    glm::vec2 center = glm::vec2(size) / 2.0f;
+    float max_radius = std::min(size.x, size.y) / 2.0f;
+
     std::vector<Agent> agents(num_agents);
     for (Agent &agent : agents)
     {
-        agent.position.x = Calc::frandrange(0.0f, size.x);
-        agent.position.y = Calc::frandrange(0.0f, size.y);
+        float random_angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+        glm::vec2 random_direction =
+            glm::vec2(glm::cos(random_angle), glm::sin(random_angle));
 
-        agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+        agent.position = center +
+            random_direction * Calc::frandrange(0.0f, max_radius);
+
+        agent.angle = random_angle + glm::pi<float>();
     }
 
     glCreateBuffers(1, &this->vbo_agent);
@@ -48,10 +56,10 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
             GL_READ_ONLY, GL_RGBA32F);
 
     this->diffuse_shader.bind();
-    this->agent_shader.set_ivec2(this->bounds_index, this->size);
-    this->agent_shader.set_float(this->diffuse_speed_index,
+    this->diffuse_shader.set_ivec2(this->bounds_index, this->size);
+    this->diffuse_shader.set_float(this->diffuse_speed_index,
             this->diffuse_speed);
-    this->agent_shader.set_float(this->decay_speed_index,
+    this->diffuse_shader.set_float(this->decay_speed_index,
             this->decay_speed);
 
     glBindImageTexture(this->trail_texture_index, this->trail_texture.get_id(),
@@ -70,19 +78,22 @@ void SlimeSimulator::update(float dt)
 {
     this->agent_shader.bind();
     this->agent_shader.set_float(this->dt_index, dt);
+    this->agent_shader.set_float(this->time_index, Timer::time());
     this->agent_shader.set_float(this->move_speed_index, this->move_speed);
     this->agent_shader.set_float(this->turn_speed_index, this->turn_speed);
+    this->agent_shader.set_float(this->trail_weight_index, this->trail_weight);
     this->agent_shader.set_float(this->sense_spacing_index,
             this->sense_spacing);
     this->agent_shader.set_int(this->sense_distance_index,
             this->sense_distance);
     this->agent_shader.set_int(this->sense_size_index, this->sense_size);
 
-    glDispatchCompute(std::ceil(this->num_agents / 128.0f), 1, 1);
+    glDispatchCompute(std::ceil(this->num_agents / 64.0f), 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     this->diffuse_shader.bind();
     this->diffuse_shader.set_float(this->dt_index, dt);
+    this->diffuse_shader.set_float(this->time_index, Timer::time());
 
     glDispatchCompute(std::ceil(this->size.x / 8.0f),
             std::ceil(this->size.y / 8.0f), 1);
@@ -100,14 +111,20 @@ const Texture *SlimeSimulator::output() const
 
 void SlimeSimulator::update_debug_window()
 {
+    ImGui::Begin("Debug");
+
     ImGui::DragFloat("Move Speed", &this->move_speed, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
     ImGui::DragFloat("Turn Speed", &this->turn_speed, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
+    ImGui::DragFloat("Trail Weight", &this->trail_weight, 1.0f, 0.0f,
+            std::numeric_limits<float>::max());
     ImGui::DragFloat("Sense Spacing", &this->sense_spacing, 1.0f, 0.0f, 180.0f);
     ImGui::DragInt("Sense Distance", &this->sense_distance, 1, 1, 100);
-    ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 10);
+    ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 3);
 
-    ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.1f, 0.0f, 1.0f);
-    ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.1f, 0.0f, 1.0f);
+    ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.1f, 0.0f, 5.0f);
+    ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.1f, 0.0f, 5.0f);
+
+    ImGui::End();
 }

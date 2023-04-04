@@ -7,9 +7,10 @@ layout(rgba32f, binding = 1) uniform image2D output_image;
 
 uniform layout(location = 2) ivec2 bounds;
 uniform layout(location = 3) float dt;
+uniform layout(location = 4) float time;
 
-uniform layout(location = 4) float diffuse_speed;
-uniform layout(location = 5) float decay_speed;
+uniform layout(location = 5) float diffuse_speed;
+uniform layout(location = 6) float decay_speed;
 
 void main()
 {
