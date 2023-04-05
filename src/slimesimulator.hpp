@@ -10,7 +10,14 @@ private:
     {
         glm::vec2 position;
         float angle;
-        float padding;
+        int species_index;
+        glm::vec4 species_mask;
+    };
+
+    enum class SpawnMode
+    {
+        point,
+        inner_circle,
     };
 
 private:
@@ -43,15 +50,19 @@ private:
     const unsigned int diffuse_speed_index = 5;
     const unsigned int decay_speed_index = 6;
 
-    float move_speed = 30.0f;
-    float turn_speed = 360.0f;
-    float trail_weight = 1.0f;
-    float sense_spacing = 45.0f;
-    int sense_distance = 9;
+    const size_t steps_per_frame = 2;
+    const size_t num_species = 1;
+    const SpawnMode spawn_mode = SpawnMode::inner_circle;
+
+    float move_speed = 20.0f;
+    float turn_speed = 720.0f;
+    float trail_weight = 5.0f;
+    float sense_spacing = 30.0f;
+    int sense_distance = 35;
     int sense_size = 1;
 
-    float diffuse_speed = 0.5f;
-    float decay_speed = 0.25f;
+    float diffuse_speed = 3.0f;
+    float decay_speed = 0.2f;
 
 public:
     SlimeSimulator(size_t num_agents, const glm::ivec2 &size);
@@ -61,4 +72,7 @@ public:
     const Texture *output() const;
 
     void update_debug_window();
+
+private:
+    void step_update(float dt);
 };

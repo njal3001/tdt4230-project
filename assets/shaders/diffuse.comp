@@ -41,7 +41,7 @@ void main()
     vec4 average = sum / 9.0;
 
     // TODO: Better way to interpolate?
-    average = mix(current_value, average, diffuse_speed * dt);
+    average = mix(current_value, average, min(1.0f, diffuse_speed * dt));
 
     vec4 diffused = max(vec4(0.0), average - decay_speed * dt);
 

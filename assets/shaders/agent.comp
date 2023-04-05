@@ -2,13 +2,14 @@
 
 #define PI 3.1415926535
 
-layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent
 {
     vec2 position;
     float angle;
-    float padding;
+    int species_index;
+    vec4 species_mask;
 };
 
 layout (std430, binding = 0) buffer agent_buffer {
@@ -63,6 +64,8 @@ float sense(Agent agent, float angle_offset)
     ivec2 sense_center =
         ivec2(agent.position + sense_direction * sense_distance);
 
+    vec4 species_weight = 2.0 * agent.species_mask - 1.0;
+
     float sum = 0.0;
     for (int ox = -sense_size; ox <= sense_size; ox++)
     {
@@ -71,7 +74,7 @@ float sense(Agent agent, float angle_offset)
             int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
             int y = int(mid(0, sense_center.y + oy, bounds.y - 1.0));
 
-            sum += dot(vec4(1.0), imageLoad(agent_image, ivec2(x, y)));
+            sum += dot(species_weight, imageLoad(agent_image, ivec2(x, y)));
         }
     }
 
@@ -136,7 +139,8 @@ void main()
         ivec2 pixel_position = ivec2(new_position);
 
         vec4 prev_value = imageLoad(agent_image, pixel_position);
-        vec4 new_value = min(vec4(1.0), prev_value + vec4(50.0) * dt);
+        vec4 new_value = min(vec4(1.0),
+                prev_value + agent.species_mask * trail_weight * dt);
 
         imageStore(agent_image, pixel_position, new_value);
     }

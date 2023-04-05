@@ -12,7 +12,6 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     diffuse_shader("assets/shaders/diffuse.comp"),
     trail_texture(size),
     diffused_trail_texture(size)
-
 {
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
@@ -24,13 +23,39 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     for (Agent &agent : agents)
     {
         float random_angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
-        glm::vec2 random_direction =
-            glm::vec2(glm::cos(random_angle), glm::sin(random_angle));
+        switch (this->spawn_mode)
+        {
+            case SpawnMode::point:
+            {
+                agent.position = center;
+                agent.angle = random_angle;
 
-        agent.position = center +
-            random_direction * Calc::frandrange(0.0f, max_radius);
+                break;
+            }
+            case SpawnMode::inner_circle:
+            {
+                glm::vec2 random_direction =
+                    glm::vec2(glm::cos(random_angle), glm::sin(random_angle));
 
-        agent.angle = random_angle + glm::pi<float>();
+                agent.position = center +
+                    random_direction * Calc::frandrange(0.0f, max_radius);
+                agent.angle = random_angle + glm::pi<float>();
+
+                break;
+            }
+        }
+
+        if (num_species == 1)
+        {
+            agent.species_index = 0;
+            agent.species_mask = glm::vec4(1.0);
+        }
+        else
+        {
+            agent.species_index = Calc::randrange(0, this->num_species);
+            agent.species_mask = glm::vec4(agent.species_index == 0,
+                    agent.species_index == 1, agent.species_index == 2, 1.0f);
+        }
     }
 
     glCreateBuffers(1, &this->vbo_agent);
@@ -57,10 +82,6 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
 
     this->diffuse_shader.bind();
     this->diffuse_shader.set_ivec2(this->bounds_index, this->size);
-    this->diffuse_shader.set_float(this->diffuse_speed_index,
-            this->diffuse_speed);
-    this->diffuse_shader.set_float(this->decay_speed_index,
-            this->decay_speed);
 
     glBindImageTexture(this->trail_texture_index, this->trail_texture.get_id(),
             0, false, 0, GL_READ_ONLY, GL_RGBA32F);
@@ -76,6 +97,15 @@ SlimeSimulator::~SlimeSimulator()
 
 void SlimeSimulator::update(float dt)
 {
+    float step_dt = dt / static_cast<float>(this->steps_per_frame);
+    for (size_t i = 0; i < this->steps_per_frame; i++)
+    {
+        this->step_update(step_dt);
+    }
+}
+
+void SlimeSimulator::step_update(float dt)
+{
     this->agent_shader.bind();
     this->agent_shader.set_float(this->dt_index, dt);
     this->agent_shader.set_float(this->time_index, Timer::time());
@@ -88,12 +118,16 @@ void SlimeSimulator::update(float dt)
             this->sense_distance);
     this->agent_shader.set_int(this->sense_size_index, this->sense_size);
 
-    glDispatchCompute(std::ceil(this->num_agents / 64.0f), 1, 1);
+    glDispatchCompute(std::ceil(this->num_agents / 128.0f), 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     this->diffuse_shader.bind();
     this->diffuse_shader.set_float(this->dt_index, dt);
     this->diffuse_shader.set_float(this->time_index, Timer::time());
+    this->diffuse_shader.set_float(this->diffuse_speed_index,
+            this->diffuse_speed);
+    this->diffuse_shader.set_float(this->decay_speed_index,
+            this->decay_speed);
 
     glDispatchCompute(std::ceil(this->size.x / 8.0f),
             std::ceil(this->size.y / 8.0f), 1);

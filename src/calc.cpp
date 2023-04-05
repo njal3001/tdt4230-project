@@ -12,6 +12,11 @@ float Calc::frandrange(float min, float max)
         static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
 
+int Calc::randrange(int min, int max)
+{
+    return min + rand() % (max - min);
+}
+
 glm::vec2 Calc::randdir()
 {
     glm::vec2 dir;
