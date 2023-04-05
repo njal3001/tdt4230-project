@@ -3,7 +3,7 @@
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D input_image;
-layout(rgba32f, binding = 1) uniform image2D output_image;
+layout(rgba32f, binding = 2) uniform image2D output_image;
 
 uniform layout(location = 2) ivec2 bounds;
 uniform layout(location = 3) float dt;

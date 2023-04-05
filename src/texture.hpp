@@ -7,11 +7,12 @@ class Texture
 private:
     unsigned int id;
     glm::ivec2 size;
+    unsigned int internal_format;
 
 public:
-    Texture(const glm::ivec2 &size);
+    Texture(const glm::ivec2 &size, unsigned int internal_format);
     ~Texture();
 
-    void set_data(const glm::vec4 *data) const;
+    void set_data(const void *data) const;
     unsigned int get_id() const;
 };

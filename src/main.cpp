@@ -37,7 +37,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(1000000, glm::ivec2(1920, 1080));
+    SlimeSimulator simulator(0.1f, glm::ivec2(320, 180));
 
     Timer frame_timer;
 
@@ -89,7 +89,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
+        // std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
     }
 
     Graphics::shutdown();

@@ -15,7 +15,6 @@ add_executable(particle-system
     src/graphics.cpp
     src/shader.cpp
     src/file.cpp
-    src/particle.cpp
     src/calc.cpp
     src/timer.cpp
     src/camera.cpp
