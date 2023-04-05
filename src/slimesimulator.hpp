@@ -18,6 +18,7 @@ private:
     size_t num_agents;
 
     ComputeShader agent_move_shader;
+    ComputeShader agent_sense_shader;
     ComputeShader diffuse_shader;
 
     Texture agent_texture;

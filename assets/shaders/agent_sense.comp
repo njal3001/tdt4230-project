@@ -35,6 +35,11 @@ float mid(float lower, float value, float upper)
     return max(lower, min(value, upper));
 }
 
+float to_rad(float deg)
+{
+    return deg * PI / 180.0;
+}
+
 uint hash(uint state)
 {
     state ^= 2747636419u;
@@ -51,10 +56,27 @@ float scale_to_unit(uint value)
     return value / 4294967295.0;
 }
 
-bool try_move(uint id, ivec2 position)
+float sense(Agent agent, float angle_offset)
 {
-    uint prev_id = imageAtomicCompSwap(agent_image, position, 0, id + 1);
-    return prev_id == 0;
+    float sense_angle = agent.angle + angle_offset;
+    vec2 sense_direction = vec2(cos(sense_angle), sin(sense_angle));
+
+    ivec2 sense_center =
+        ivec2(agent.position + sense_direction * sense_distance);
+
+    float sum = 0.0;
+    for (int ox = -sense_size; ox <= sense_size; ox++)
+    {
+        for (int oy = -sense_size; oy <= sense_size; oy++)
+        {
+            int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
+            int y = int(mid(0, sense_center.y + oy, bounds.y - 1.0));
+
+            sum += dot(vec4(1.0), imageLoad(trail_image, ivec2(x, y)));
+        }
+    }
+
+    return sum;
 }
 
 void main()
@@ -72,42 +94,31 @@ void main()
                 agent.position.y * bounds.x +
                 time * 10000.0));
 
-    vec2 new_position = agent.position;
+    float sense_spacing_rad = to_rad(sense_spacing);
+    float sense_forward = sense(agent, 0.0);
+    float sense_right = sense(agent, sense_spacing_rad);
+    float sense_left = sense(agent, -sense_spacing_rad);
+
+    float turn_speed_rad = to_rad(turn_speed);
+    float random_turn_weight = scale_to_unit(rand);
+
     float new_angle = agent.angle;
-
-    float random_angle = scale_to_unit(rand) * 2.0 * PI;
-
-    vec2 velocity = vec2(cos(agent.angle), sin(agent.angle)) * move_speed;
-    new_position += velocity * dt;
-
-    if (new_position.x < 0 || new_position.x >= bounds.x ||
-            new_position.y < 0 || new_position.y >= bounds.y)
+    if (sense_forward > sense_right && sense_forward > sense_left)
     {
-        new_position.x = mid(0.0, new_position.x, bounds.x - 1.0);
-        new_position.y = mid(0.0, new_position.y, bounds.y - 1.0);
-        new_angle = random_angle;
+        new_angle += 0.0;
+    }
+    else if (sense_forward < sense_right && sense_forward < sense_left)
+    {
+        new_angle += 2.0 * (random_turn_weight - 1.0) * turn_speed_rad * dt;
+    }
+    else if (sense_left < sense_right)
+    {
+        new_angle += random_turn_weight * turn_speed_rad * dt;
+    }
+    else if (sense_right < sense_left)
+    {
+        new_angle -= random_turn_weight * turn_speed_rad * dt;
     }
 
-    ivec2 prev_pixel_position = ivec2(agent.position);
-    ivec2 new_pixel_position = ivec2(new_position);
-
-    if (prev_pixel_position != new_pixel_position)
-    {
-        bool did_move = try_move(id, new_pixel_position);
-        if (did_move)
-        {
-            imageStore(agent_image, prev_pixel_position, ivec4(0));
-
-            vec4 prev_trail = imageLoad(trail_image, new_pixel_position);
-            vec4 new_trail = min(vec4(1.0), prev_trail + vec4(trail_weight) * dt);
-            imageStore(trail_image, new_pixel_position, new_trail);
-        }
-        else
-        {
-            new_angle = random_angle;
-        }
-    }
-
-    agents[id].position = new_position;
     agents[id].angle = new_angle;
 }
