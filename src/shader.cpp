@@ -171,5 +171,17 @@ RenderShader::RenderShader(const std::string &vertex_path,
 { }
 
 ComputeShader::ComputeShader(const std::string &path)
-    : Shader({{path, GL_COMPUTE_SHADER}})
+    : Shader({{path, GL_COMPUTE_SHADER}}), work_group(1)
 {}
+
+void ComputeShader::set_work_group(const glm::uvec3 &work_group)
+{
+    this->work_group = work_group;
+}
+
+void ComputeShader::dispatch_and_wait() const
+{
+    glDispatchCompute(this->work_group.x, this->work_group.y,
+            this->work_group.z);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}

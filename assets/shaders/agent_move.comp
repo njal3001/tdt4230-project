@@ -16,9 +16,11 @@ layout (std430, binding = 0) buffer agent_buffer {
 };
 
 layout(rgba32f, binding = 0) uniform image2D trail_image;
-layout(r32ui, binding = 1) uniform uimage2D agent_image;
+layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
+layout(rgba32f, binding = 2) uniform image2D agent_image;
+layout(r32ui, binding = 3) uniform uimage2D occupied_image;
 
-uniform layout(location = 2) ivec2 bounds;
+uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 3) float dt;
 uniform layout(location = 4) float time;
 uniform layout(location = 5) int num_agents;
@@ -51,10 +53,16 @@ float scale_to_unit(uint value)
     return value / 4294967295.0;
 }
 
-bool try_move(uint id, ivec2 position)
+bool try_move(uint id, ivec2 position, ivec2 previous_position)
 {
-    uint prev_id = imageAtomicCompSwap(agent_image, position, 0, id + 1);
-    return prev_id == 0;
+    uint prev_id = imageAtomicCompSwap(occupied_image, position, 0, id + 1);
+    if (prev_id == 0)
+    {
+        imageStore(occupied_image, previous_position, ivec4(0));
+        return true;
+    }
+
+    return false;
 }
 
 void main()
@@ -80,34 +88,37 @@ void main()
     vec2 velocity = vec2(cos(agent.angle), sin(agent.angle)) * move_speed;
     new_position += velocity * dt;
 
-    if (new_position.x < 0 || new_position.x >= bounds.x ||
-            new_position.y < 0 || new_position.y >= bounds.y)
-    {
-        new_position.x = mid(0.0, new_position.x, bounds.x - 1.0);
-        new_position.y = mid(0.0, new_position.y, bounds.y - 1.0);
-        new_angle = random_angle;
-    }
+    new_position.x = mod(new_position.x, bounds.x);
+    new_position.y = mod(new_position.y, bounds.y);
 
     ivec2 prev_pixel_position = ivec2(agent.position);
     ivec2 new_pixel_position = ivec2(new_position);
 
     if (prev_pixel_position != new_pixel_position)
     {
-        bool did_move = try_move(id, new_pixel_position);
+        bool did_move = try_move(id, new_pixel_position, prev_pixel_position);
         if (did_move)
         {
-            imageStore(agent_image, prev_pixel_position, ivec4(0));
+            vec4 prev_trail =
+                imageLoad(trail_image, new_pixel_position);
+            vec4 new_trail =
+                min(vec4(1.0), prev_trail + vec4(trail_weight) * dt);
 
-            vec4 prev_trail = imageLoad(trail_image, new_pixel_position);
-            vec4 new_trail = min(vec4(1.0), prev_trail + vec4(trail_weight) * dt);
             imageStore(trail_image, new_pixel_position, new_trail);
+
+            agents[id].position = new_position;
         }
         else
         {
             new_angle = random_angle;
+            // imageStore(trail_image, new_pixel_position,
+            //         vec4(1.0, 0.0, 0.0, 1.0));
         }
     }
+    else
+    {
+        agents[id].position = new_position;
+    }
 
-    agents[id].position = new_position;
     agents[id].angle = new_angle;
 }

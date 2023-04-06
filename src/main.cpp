@@ -6,6 +6,7 @@
 #include "slimesimulator.hpp"
 #include "calc.hpp"
 #include "timer.hpp"
+#include "mesh.hpp"
 
 int main()
 {
@@ -15,7 +16,7 @@ int main()
     }
 
     GLFWwindow *window = glfwCreateWindow(960, 540,
-            "Particle System", NULL, NULL);
+            "Slime Simulator", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -37,40 +38,11 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(0.001f, glm::ivec2(320, 180));
+    SlimeSimulator simulator(0.03f, glm::ivec2(640, 360));
 
     Timer frame_timer;
 
-    render_shader.bind();
-    glBindTextureUnit(0, simulator.output()->get_id());
-
-    glm::vec4 vertices[] =
-    {
-        glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
-        glm::vec4(-1.0f, -1.0f, 0.0f, 0.0f),
-        glm::vec4(1.0f, -1.0f, 1.0f, 0.0f),
-        glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
-        glm::vec4(1.0f, -1.0f, 1.0f, 0.0f),
-        glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-    };
-
-    unsigned int vao;
-    unsigned int vbo;
-
-    glCreateVertexArrays(1, &vao);
-    glCreateBuffers(1, &vbo);
-    glNamedBufferData(vbo, sizeof(vertices), vertices, GL_STATIC_COPY);
-
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, 4 * sizeof(float));
-
-    glEnableVertexArrayAttrib(vao, 0);
-    glEnableVertexArrayAttrib(vao, 1);
-
-    glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
-
-    glVertexArrayAttribBinding(vao, 0, 0);
-    glVertexArrayAttribBinding(vao, 1, 0);
+    Mesh quad = Mesh::quad(glm::vec2(0.0f), glm::vec2(2.0f));
 
     while (!glfwWindowShouldClose(window))
     {
@@ -80,9 +52,17 @@ int main()
         float dt = frame_timer.delta();
         simulator.update(dt);
 
-        glBindVertexArray(vao);
         render_shader.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE))
+        {
+            glBindTextureUnit(0, simulator.agents()->get_id());
+        }
+        else
+        {
+            glBindTextureUnit(0, simulator.trail()->get_id());
+        }
+
+        quad.render();
 
         Graphics::end_frame();
 

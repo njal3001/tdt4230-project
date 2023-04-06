@@ -1,0 +1,27 @@
+#version 450 core
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) uniform image2D trail_image;
+layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
+layout(rgba32f, binding = 2) uniform image2D agent_image;
+layout(r32ui, binding = 3) uniform uimage2D occupied_image;
+
+uniform layout(location = 0) ivec2 bounds;
+uniform layout(location = 3) float dt;
+uniform layout(location = 4) float time;
+
+void main()
+{
+	uvec3 id = gl_GlobalInvocationID;
+
+    if (id.x >= bounds.x || id.y >= bounds.y)
+    {
+        return;
+    }
+
+    uint occupied = imageLoad(occupied_image, ivec2(id.x, id.y)).x;
+    float c = float(occupied > 0);
+
+    imageStore(agent_image, ivec2(id.x, id.y), vec4(c, c, c, 1.0));
+}

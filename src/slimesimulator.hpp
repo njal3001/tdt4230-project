@@ -20,18 +20,21 @@ private:
     ComputeShader agent_move_shader;
     ComputeShader agent_sense_shader;
     ComputeShader diffuse_shader;
+    ComputeShader occupied_shader;
 
     Texture agent_texture;
     Texture trail_texture;
     Texture diffused_trail_texture;
+    Texture agent_color_texture;
 
     unsigned int vbo_agent;
 
-    const unsigned int trail_texture_index = 0;
-    const unsigned int agent_texture_index = 1;
-    const unsigned int diffused_trail_texture_index = 2;
+    const unsigned int trail_texture_unit = 0;
+    const unsigned int diffused_trail_texture_unit = 1;
+    const unsigned int agent_texture_unit = 2;
+    const unsigned int occupied_texture_unit = 3;
 
-    const unsigned int bounds_index = 2;
+    const unsigned int bounds_index = 0;
     const unsigned int dt_index = 3;
     const unsigned int time_index = 4;
 
@@ -48,7 +51,7 @@ private:
 
     float move_speed = 30.0f;
     float turn_speed = 360.0f;
-    float trail_weight = 1000.0f;
+    float trail_weight = 50.0f;
     float sense_spacing = 45.0f;
     int sense_distance = 9;
     int sense_size = 1;
@@ -61,7 +64,9 @@ public:
     ~SlimeSimulator();
 
     void update(float dt);
-    const Texture *output() const;
+
+    const Texture *trail() const;
+    const Texture *agents() const;
 
     void update_debug_window();
 };

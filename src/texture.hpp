@@ -14,5 +14,6 @@ public:
     ~Texture();
 
     void set_data(const void *data) const;
+    void bind_to_unit(unsigned int unit) const;
     unsigned int get_id() const;
 };

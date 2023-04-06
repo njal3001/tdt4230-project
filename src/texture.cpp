@@ -43,6 +43,12 @@ void Texture::set_data(const void *data) const
             this->size.y, format, type, data);
 }
 
+void Texture::bind_to_unit(unsigned int unit) const
+{
+    glBindImageTexture(unit, this->id, 0, false, 0,
+            GL_READ_WRITE, this->internal_format);
+}
+
 unsigned int Texture::get_id() const
 {
     return this->id;
