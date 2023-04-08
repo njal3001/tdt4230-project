@@ -19,6 +19,7 @@ layout(rgba32f, binding = 0) uniform image2D trail_image;
 layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
 layout(rgba32f, binding = 2) uniform image2D agent_image;
 layout(r32ui, binding = 3) uniform uimage2D occupied_image;
+layout(rgba32f, binding = 4) uniform image2D wall_image;
 
 uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 3) float dt;
@@ -55,9 +56,18 @@ float scale_to_unit(uint value)
 
 bool try_move(uint id, ivec2 position, ivec2 previous_position)
 {
+    // Check if there is a wall at target position
+    vec4 wall = imageLoad(wall_image, position);
+    if (wall.a > 0.0)
+    {
+        return false;
+    }
+
+    // Check if target position is vacant
     uint prev_id = imageAtomicCompSwap(occupied_image, position, 0, id + 1);
     if (prev_id == 0)
     {
+        // Mark previous position as vacant
         imageStore(occupied_image, previous_position, ivec4(0));
         return true;
     }
@@ -111,8 +121,6 @@ void main()
         else
         {
             new_angle = random_angle;
-            // imageStore(trail_image, new_pixel_position,
-            //         vec4(1.0, 0.0, 0.0, 1.0));
         }
     }
     else

@@ -13,10 +13,11 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
     agent_sense_shader("assets/shaders/agent_sense.comp"),
     diffuse_shader("assets/shaders/diffuse.comp"),
     occupied_shader("assets/shaders/occupied.comp"),
-    agent_texture(size, GL_R32UI),
+    occupied_texture(size, GL_R32UI),
+    wall_texture(size, GL_RGBA32F),
     trail_texture(size, GL_RGBA32F),
     diffused_trail_texture(size, GL_RGBA32F),
-    agent_color_texture(size, GL_RGBA32F)
+    agent_texture(size, GL_RGBA32F)
 
 {
     assert(agent_move_shader.valid());
@@ -28,30 +29,24 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
     float max_radius = std::min(size.x, size.y) / 2.0f;
 
     std::vector<Agent> agents;
-    std::vector<unsigned int> agent_pixels(size.x * size.y, 0);
+    std::vector<unsigned int> occupied_pixels(size.x * size.y, 0);
 
-    size_t count = 0;
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
-            // if (count < 10)
             if (agent_percentage > Calc::frand())
             {
-                count++;
-
                 Agent agent;
                 agent.position = glm::vec2(x + 0.5f, y + 0.5f);
                 agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
                 agents.push_back(agent);
 
                 this->num_agents++;
-                agent_pixels[y * size.x + x] = this->num_agents;
+                occupied_pixels[y * size.x + x] = this->num_agents;
             }
         }
     }
-
-    std::cout << this->num_agents << '/' << size.x * size.y << " (" << this->num_agents / (float)(size.x * size.y) << "%)\n";
 
     glCreateBuffers(1, &this->vbo_agent);
     glNamedBufferData(this->vbo_agent, this->num_agents * sizeof(Agent),
@@ -61,12 +56,15 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
 
     std::vector<glm::vec4> trail_pixels(size.x * size.y,
             glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    std::vector<glm::vec4> wall_pixels(size.x * size.y, glm::vec4(0.0));
 
-    this->agent_texture.set_data(agent_pixels.data());
+    this->occupied_texture.set_data(occupied_pixels.data());
+    this->wall_texture.set_data(wall_pixels.data());
     this->trail_texture.set_data(trail_pixels.data());
 
-    this->agent_texture.bind_to_unit(this->occupied_texture_unit);
-    this->agent_color_texture.bind_to_unit(this->agent_texture_unit);
+    this->occupied_texture.bind_to_unit(this->occupied_texture_unit);
+    this->wall_texture.bind_to_unit(this->wall_texture_unit);
+    this->agent_texture.bind_to_unit(this->agent_texture_unit);
     this->trail_texture.bind_to_unit(this->trail_texture_unit);
     this->diffused_trail_texture.bind_to_unit(
             this->diffused_trail_texture_unit);
@@ -162,6 +160,40 @@ void SlimeSimulator::update(float dt)
             0, 0, 0, this->size.x, this->size.y, 1);
 }
 
+void SlimeSimulator::add_wall(const glm::ivec2 &position)
+{
+    this->update_wall(position,
+            glm::vec4(0.3f, 0.3f, 0.3f, 1.0f), this->brush_size);
+}
+
+void SlimeSimulator::remove_wall(const glm::ivec2 &position)
+{
+    this->update_wall(position,
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), this->eraser_size);
+}
+
+void SlimeSimulator::update_wall(const glm::ivec2 &position,
+        const glm::vec4 &value, int size)
+{
+    int x_min = Calc::mid(0, position.x - size, this->size.x);
+    int y_min = Calc::mid(0, position.y - size, this->size.y);
+    int x_max = Calc::mid(0, position.x + size, this->size.x);
+    int y_max = Calc::mid(0, position.y + size, this->size.y);
+
+    int width = x_max - x_min;
+    int heigth = y_max - y_min;
+
+    if (width <= 0 || heigth <= 0)
+    {
+        return;
+    }
+
+    std::vector<glm::vec4> pixels(heigth * width, value);
+
+    this->wall_texture.set_sub_data(pixels.data(),
+            x_min, y_min, width, heigth);
+}
+
 const Texture *SlimeSimulator::trail() const
 {
     return &this->trail_texture;
@@ -169,7 +201,12 @@ const Texture *SlimeSimulator::trail() const
 
 const Texture *SlimeSimulator::agents() const
 {
-    return &this->agent_color_texture;
+    return &this->agent_texture;
+}
+
+const Texture *SlimeSimulator::walls() const
+{
+    return &this->wall_texture;
 }
 
 void SlimeSimulator::update_debug_window()
@@ -182,12 +219,16 @@ void SlimeSimulator::update_debug_window()
             std::numeric_limits<float>::max());
     ImGui::DragFloat("Trail Weight", &this->trail_weight, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
-    ImGui::DragFloat("Sense Spacing", &this->sense_spacing, 1.0f, 0.0f, 180.0f);
+    ImGui::DragFloat("Sense Spacing",
+            &this->sense_spacing, 1.0f, 0.0f, 180.0f);
     ImGui::DragInt("Sense Distance", &this->sense_distance, 1, 1, 100);
     ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 3);
 
     ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.1f, 0.0f, 5.0f);
     ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.1f, 0.0f, 5.0f);
+
+    ImGui::DragInt("Brush Size", &this->brush_size, 1, 1, 100);
+    ImGui::DragInt("Eraser Size", &this->eraser_size, 1, 1, 100);
 
     ImGui::End();
 }

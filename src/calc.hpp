@@ -7,4 +7,6 @@ namespace Calc
     float frandrange(float min, float max);
 
     glm::vec2 randdir();
+
+    int mid(int low, int value, int high);
 };

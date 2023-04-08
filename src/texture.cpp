@@ -24,6 +24,12 @@ Texture::~Texture()
 
 void Texture::set_data(const void *data) const
 {
+    this->set_sub_data(data, 0, 0, this->size.x, this->size.y);
+}
+
+void Texture::set_sub_data(const void *data,
+        int ox, int oy, int width, int height) const
+{
     unsigned int format;
     unsigned int type;
 
@@ -39,8 +45,8 @@ void Texture::set_data(const void *data) const
             break;
     }
 
-    glTextureSubImage2D(this->id, 0, 0, 0, this->size.x,
-            this->size.y, format, type, data);
+    glTextureSubImage2D(this->id, 0, ox, oy, width,
+            height, format, type, data);
 }
 
 void Texture::bind_to_unit(unsigned int unit) const
