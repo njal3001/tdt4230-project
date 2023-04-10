@@ -2,7 +2,7 @@
 
 #define PI 3.1415926535
 
-layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 struct Agent
 {
@@ -70,13 +70,22 @@ bool try_move(uint id, ivec2 position, ivec2 previous_position)
 
 void main()
 {
-	uint id = gl_GlobalInvocationID.x;
-    if (id >= num_agents)
+	ivec2 pixel_position = ivec2(gl_GlobalInvocationID.xy);
+    if (pixel_position.x >= bounds.x || pixel_position.y >= bounds.y)
     {
         return;
     }
 
-    Agent agent = agents[id];
+    uint occupied = imageLoad(occupied_image,
+            ivec2(pixel_position.x, pixel_position.y)).x;
+    if (occupied == 0)
+    {
+        return;
+    }
+
+	uint agent_id = occupied - 1;
+
+    Agent agent = agents[agent_id];
 
     uint rand = hash(uint(
                 agent.position.x +
@@ -100,22 +109,21 @@ void main()
         new_angle = random_angle;
     }
 
-    ivec2 prev_pixel_position = ivec2(agent.position);
     ivec2 new_pixel_position = ivec2(new_position);
-
-    if (prev_pixel_position != new_pixel_position)
+    if (pixel_position != new_pixel_position)
     {
-        bool did_move = try_move(id, new_pixel_position, prev_pixel_position);
+        bool did_move = try_move(agent_id, new_pixel_position,
+                pixel_position);
         if (did_move)
         {
             vec4 prev_trail =
-                imageLoad(trail_image, new_pixel_position);
+                imageLoad(trail_image, pixel_position);
             vec4 new_trail = min(vec4(1.0),
                     prev_trail + agent.species_mask * trail_weight * dt);
 
             imageStore(trail_image, new_pixel_position, new_trail);
 
-            agents[id].position = new_position;
+            agents[agent_id].position = new_position;
         }
         else
         {
@@ -124,8 +132,8 @@ void main()
     }
     else
     {
-        agents[id].position = new_position;
+        agents[agent_id].position = new_position;
     }
 
-    agents[id].angle = new_angle;
+    agents[agent_id].angle = new_angle;
 }

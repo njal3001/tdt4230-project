@@ -81,15 +81,13 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
     this->diffused_trail_texture.bind_to_unit(
             this->diffused_trail_texture_unit);
 
-    glm::uvec3 agent_work_group = glm::uvec3(
-            std::ceil(this->num_agents / 64.0f), 1, 1);
-    glm::uvec3 texture_work_group = glm::uvec3(std::ceil(this->size.x / 8.0f),
-            std::ceil(this->size.y / 8.0f), 1);
+    glm::uvec3 work_group = glm::uvec3(std::ceil(this->size.x / 16.0f),
+            std::ceil(this->size.y / 16.0f), 1);
 
-    this->agent_move_shader.set_work_group(agent_work_group);
-    this->agent_sense_shader.set_work_group(agent_work_group);
-    this->diffuse_shader.set_work_group(texture_work_group);
-    this->occupied_shader.set_work_group(texture_work_group);
+    this->agent_move_shader.set_work_group(work_group);
+    this->agent_sense_shader.set_work_group(work_group);
+    this->diffuse_shader.set_work_group(work_group);
+    this->occupied_shader.set_work_group(work_group);
 
     this->agent_move_shader.bind();
     this->agent_move_shader.set_ivec2(this->bounds_index, this->size);

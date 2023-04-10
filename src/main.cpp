@@ -40,7 +40,7 @@ int main()
     assert(render_shader.valid());
 
     glm::ivec2 texture_size(1920, 1080);
-    SlimeSimulator simulator(0.15f, texture_size);
+    SlimeSimulator simulator(0.5f, texture_size);
 
     Timer frame_timer;
 

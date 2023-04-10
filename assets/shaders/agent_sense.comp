@@ -86,13 +86,21 @@ float sense(Agent agent, float angle_offset)
 
 void main()
 {
-	uint id = gl_GlobalInvocationID.x;
-    if (id >= num_agents)
+	uvec3 id = gl_GlobalInvocationID;
+    if (id.x >= bounds.x || id.y >= bounds.y)
     {
         return;
     }
 
-    Agent agent = agents[id];
+    uint occupied = imageLoad(occupied_image, ivec2(id.x, id.y)).x;
+    if (occupied == 0)
+    {
+        return;
+    }
+
+	uint agent_id = occupied - 1;
+
+    Agent agent = agents[agent_id];
 
     uint rand = hash(uint(
                 agent.position.x +
@@ -125,5 +133,5 @@ void main()
         new_angle -= turn_speed_rad * dt;
     }
 
-    agents[id].angle = new_angle;
+    agents[agent_id].angle = new_angle;
 }
