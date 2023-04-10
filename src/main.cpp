@@ -1,6 +1,7 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 #include "graphics.hpp"
 #include "shader.hpp"
 #include "slimesimulator.hpp"
@@ -38,8 +39,8 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    glm::ivec2 texture_size(1920, 1080);
-    SlimeSimulator simulator(0.05f, texture_size);
+    glm::ivec2 texture_size(960, 540);
+    SlimeSimulator simulator(0.01f, texture_size);
 
     Timer frame_timer;
 
@@ -55,7 +56,7 @@ int main()
         bool mouse_right_pressed =
             glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS;
 
-        if (mouse_left_pressed || mouse_right_pressed)
+        if (!ImGui::GetIO().WantCaptureMouse && (mouse_left_pressed || mouse_right_pressed))
         {
             glm::vec2 cursor = Graphics::get_normalized_cursor_position();
             glm::ivec2 wall_position = cursor * glm::vec2(texture_size);
