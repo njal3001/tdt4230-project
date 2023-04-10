@@ -2,7 +2,7 @@
 
 #define PI 3.1415926535
 
-layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent
 {
@@ -16,19 +16,23 @@ layout (std430, binding = 0) buffer agent_buffer {
     Agent agents[];
 };
 
-layout(rgba32f, binding = 0) uniform image2D agent_image;
+layout(rgba32f, binding = 0) uniform image2D trail_image;
+layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
+layout(rgba32f, binding = 2) uniform image2D agent_image;
+layout(r32ui, binding = 3) uniform uimage2D occupied_image;
+layout(rgba32f, binding = 4) uniform image2D wall_image;
 
-uniform layout(location = 2) ivec2 bounds;
-uniform layout(location = 3) float dt;
-uniform layout(location = 4) float time;
-uniform layout(location = 5) int num_agents;
+uniform layout(location = 0) ivec2 bounds;
+uniform layout(location = 1) float dt;
+uniform layout(location = 2) float time;
+uniform layout(location = 3) int num_agents;
 
-uniform layout(location = 6) float move_speed;
-uniform layout(location = 7) float turn_speed;
-uniform layout(location = 8) float trail_weight;
-uniform layout(location = 9) float sense_spacing;
-uniform layout(location = 10) int sense_distance;
-uniform layout(location = 11) int sense_size;
+uniform layout(location = 4) float move_speed;
+uniform layout(location = 5) float turn_speed;
+uniform layout(location = 6) float trail_weight;
+uniform layout(location = 7) float sense_spacing;
+uniform layout(location = 8) int sense_distance;
+uniform layout(location = 9) int sense_size;
 
 float mid(float lower, float value, float upper)
 {
@@ -115,36 +119,12 @@ void main()
     }
     else if (sense_left < sense_right)
     {
-        new_angle += random_turn_weight * turn_speed_rad * dt;
+        new_angle += turn_speed_rad * dt;
     }
     else if (sense_right < sense_left)
     {
-        new_angle -= random_turn_weight * turn_speed_rad * dt;
+        new_angle -= turn_speed_rad * dt;
     }
 
-    vec2 velocity = vec2(cos(new_angle), sin(new_angle)) * move_speed;
-    vec2 new_position = agent.position + velocity * dt;
-
-    if (new_position.x < 0.0 || new_position.x >= bounds.x ||
-            new_position.y < 0.0 || new_position.y >= bounds.y)
-    {
-        new_position.x = mid(0.0, new_position.x, bounds.x - 1.0);
-        new_position.y = mid(0.0, new_position.y, bounds.y - 1.0);
-
-        rand = hash(rand);
-        new_angle = scale_to_unit(rand) * 2.0 * PI;
-    }
-    else
-    {
-        ivec2 pixel_position = ivec2(new_position);
-
-        vec4 prev_value = imageLoad(agent_image, pixel_position);
-        vec4 new_value = min(vec4(1.0),
-                prev_value + agent.species_mask * trail_weight * dt);
-
-        imageStore(agent_image, pixel_position, new_value);
-    }
-
-    agents[id].position = new_position;
     agents[id].angle = new_angle;
 }

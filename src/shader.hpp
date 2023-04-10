@@ -50,6 +50,12 @@ public:
 
 class ComputeShader : public Shader
 {
+private:
+    glm::uvec3 work_group;
+
 public:
     ComputeShader(const std::string &path);
+
+    void set_work_group(const glm::uvec3 &work_group);
+    void dispatch_and_wait() const;
 };

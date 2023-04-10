@@ -3,14 +3,20 @@
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D input_image;
-layout(rgba32f, binding = 1) uniform image2D output_image;
+layout(rgba32f, binding = 2) uniform image2D output_image;
 
-uniform layout(location = 2) ivec2 bounds;
-uniform layout(location = 3) float dt;
-uniform layout(location = 4) float time;
+layout(rgba32f, binding = 0) uniform image2D trail_image;
+layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
+layout(rgba32f, binding = 2) uniform image2D agent_image;
+layout(r32ui, binding = 3) uniform uimage2D occupied_image;
+layout(rgba32f, binding = 4) uniform image2D wall_image;
 
-uniform layout(location = 5) float diffuse_speed;
-uniform layout(location = 6) float decay_speed;
+uniform layout(location = 0) ivec2 bounds;
+uniform layout(location = 1) float dt;
+uniform layout(location = 2) float time;
+
+uniform layout(location = 3) float diffuse_speed;
+uniform layout(location = 4) float decay_speed;
 
 void main()
 {
@@ -31,19 +37,19 @@ void main()
 
             if (x >= 0 && x < bounds.x && y >= 0 && y < bounds.y)
             {
-                sum += imageLoad(input_image, ivec2(x, y));
+                sum += imageLoad(trail_image, ivec2(x, y));
             }
         }
     }
 
-    vec4 current_value = imageLoad(input_image, ivec2(id.x, id.y));
+    vec4 current_value = imageLoad(trail_image, ivec2(id.x, id.y));
 
     vec4 average = sum / 9.0;
 
     // TODO: Better way to interpolate?
-    average = mix(current_value, average, min(1.0f, diffuse_speed * dt));
+    average = mix(current_value, average, min(1.0, diffuse_speed * dt));
 
     vec4 diffused = max(vec4(0.0), average - decay_speed * dt);
 
-    imageStore(output_image, ivec2(id.x, id.y), diffused);
+    imageStore(diffused_trail_image, ivec2(id.x, id.y), diffused);
 }

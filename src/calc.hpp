@@ -9,4 +9,6 @@ namespace Calc
     int randrange(int min, int max);
 
     glm::vec2 randdir();
+
+    int mid(int low, int value, int high);
 };

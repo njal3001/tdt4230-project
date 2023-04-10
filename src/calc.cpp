@@ -1,5 +1,6 @@
 #include "calc.hpp"
 #include <cmath>
+#include <algorithm>
 
 float Calc::frand()
 {
@@ -24,4 +25,9 @@ glm::vec2 Calc::randdir()
     dir.y = frandrange(-1.0f, 1.0f);
 
     return glm::normalize(dir);
+}
+
+int Calc::mid(int low, int value, int high)
+{
+    return std::max(low, std::min(value, high));
 }
