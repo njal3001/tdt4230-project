@@ -24,7 +24,6 @@ private:
     ComputeShader occupied_shader;
 
     Texture occupied_texture;
-    Texture wall_texture;
     Texture trail_texture;
     Texture diffused_trail_texture;
     Texture agent_texture;
@@ -35,7 +34,6 @@ private:
     const unsigned int diffused_trail_texture_unit = 1;
     const unsigned int agent_texture_unit = 2;
     const unsigned int occupied_texture_unit = 3;
-    const unsigned int wall_texture_unit = 4;
 
     const unsigned int bounds_index = 0;
     const unsigned int dt_index = 1;
@@ -65,26 +63,17 @@ private:
     float diffuse_speed = 3.0f;
     float decay_speed = 0.2f;
 
-    int brush_size = 1;
-    int eraser_size = 5;
-
 public:
     SlimeSimulator(float agent_percentage, const glm::ivec2 &size);
     ~SlimeSimulator();
 
     void update(float dt);
 
-    void add_wall(const glm::ivec2 &position);
-    void remove_wall(const glm::ivec2 &position);
-
     const Texture *trail() const;
     const Texture *agents() const;
-    const Texture *walls() const;
 
     void update_debug_window();
 
 private:
     void step_update(float dt);
-    void update_wall(const glm::ivec2 &position,
-            const glm::vec4 &value, int size);
 };

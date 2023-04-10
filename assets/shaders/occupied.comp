@@ -2,11 +2,22 @@
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+struct Agent
+{
+    vec2 position;
+    float angle;
+    int species_index;
+    vec4 species_mask;
+};
+
+layout (std430, binding = 0) buffer agent_buffer {
+    Agent agents[];
+};
+
 layout(rgba32f, binding = 0) uniform image2D trail_image;
 layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
 layout(rgba32f, binding = 2) uniform image2D agent_image;
 layout(r32ui, binding = 3) uniform uimage2D occupied_image;
-layout(rgba32f, binding = 4) uniform image2D wall_image;
 
 uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 1) float dt;
@@ -21,8 +32,14 @@ void main()
         return;
     }
 
-    uint occupied = imageLoad(occupied_image, ivec2(id.x, id.y)).x;
-    float c = float(occupied > 0);
+    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);
 
-    imageStore(agent_image, ivec2(id.x, id.y), vec4(c, c, c, 1.0));
+    uint occupied = imageLoad(occupied_image, ivec2(id.x, id.y)).x;
+    if (occupied > 0)
+    {
+        Agent agent = agents[occupied - 1];
+        color = agent.species_mask;
+    }
+
+    imageStore(agent_image, ivec2(id.x, id.y), color);
 }
