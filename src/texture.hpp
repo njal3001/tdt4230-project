@@ -16,6 +16,7 @@ public:
     void set_data(const void *data) const;
     void set_sub_data(const void *data,
             int ox, int oy, int width, int height) const;
+    void copy(const Texture *source) const;
 
     void bind_to_unit(unsigned int unit) const;
     unsigned int get_id() const;

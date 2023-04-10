@@ -176,9 +176,7 @@ void SlimeSimulator::step_update(float dt)
 
     this->occupied_shader.dispatch_and_wait();
 
-    glCopyImageSubData(this->diffused_trail_texture.get_id(), GL_TEXTURE_2D,
-            0, 0, 0, 0, this->trail_texture.get_id(), GL_TEXTURE_2D, 0,
-            0, 0, 0, this->size.x, this->size.y, 1);
+    this->trail_texture.copy(&this->diffused_trail_texture);
 }
 
 void SlimeSimulator::add_wall(const glm::ivec2 &position)

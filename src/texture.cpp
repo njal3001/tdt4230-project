@@ -49,6 +49,13 @@ void Texture::set_sub_data(const void *data,
             height, format, type, data);
 }
 
+void Texture::copy(const Texture *source) const
+{
+    glCopyImageSubData(source->get_id(), GL_TEXTURE_2D,
+            0, 0, 0, 0, this->id, GL_TEXTURE_2D, 0,
+            0, 0, 0, this->size.x, this->size.y, 1);
+}
+
 void Texture::bind_to_unit(unsigned int unit) const
 {
     glBindImageTexture(unit, this->id, 0, false, 0,
