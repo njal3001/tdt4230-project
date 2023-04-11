@@ -9,6 +9,7 @@ find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 
 set(IMGUI_DIR src/external/imgui)
+set(STB_DIR src/external/stb)
 
 add_executable(slime-simulator
     src/main.cpp
@@ -33,7 +34,7 @@ add_executable(slime-simulator
 )
 
 include_directories(. ${GLEW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS}
-    private ${IMGUI_DIR})
+    private ${IMGUI_DIR} ${STB_DIR})
 target_link_libraries(slime-simulator glfw ${OPENGL_LIBRARIES}
     GLEW::GLEW glm::glm)
 

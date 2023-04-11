@@ -10,7 +10,8 @@ private:
     unsigned int internal_format;
 
 public:
-    Texture(const glm::ivec2 &size, unsigned int internal_format);
+    Texture();
+    void initialize(const glm::ivec2 &size, unsigned int internal_format);
     ~Texture();
 
     void set_data(const void *data) const;

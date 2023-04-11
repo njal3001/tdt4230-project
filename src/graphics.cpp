@@ -19,6 +19,8 @@ namespace
     double cursory;
     int view_width;
     int view_height;
+    int aspect_width;
+    int aspect_height;
 };
 
 static void APIENTRY gl_message_callback(GLenum source, GLenum type, GLuint id,
@@ -85,7 +87,7 @@ static void APIENTRY gl_message_callback(GLenum source, GLenum type, GLuint id,
     printf("GL (%s:%s) %s\n", type_name, severity_name, message);
 }
 
-static void on_window_size_changed(GLFWwindow *window, int width, int height)
+static void update_viewport(int width, int height)
 {
     window_width = width;
     window_height = height;
@@ -95,7 +97,7 @@ static void on_window_size_changed(GLFWwindow *window, int width, int height)
 
     float sx, sy;
 
-    const float aspect = 1920.0f / 1080.0f;
+    const float aspect = aspect_width / static_cast<float>(aspect_height);
     if (width / aspect > height)
     {
         sx = height * aspect;
@@ -113,6 +115,11 @@ static void on_window_size_changed(GLFWwindow *window, int width, int height)
     glViewport(x - sx / 2.0f, y - sy / 2.0f, sx, sy);
 }
 
+static void on_window_size_changed(GLFWwindow *window, int width, int height)
+{
+    update_viewport(width, height);
+}
+
 static void on_cursor_position_changed(GLFWwindow *window, double x, double y)
 {
     cursorx = x;
@@ -121,13 +128,16 @@ static void on_cursor_position_changed(GLFWwindow *window, double x, double y)
 
 void Graphics::initialize(GLFWwindow *window)
 {
+    aspect_width = 1920;
+    aspect_height = 1080;
+
     glfwSetWindowSizeCallback(window, on_window_size_changed);
     glfwSetCursorPosCallback(window, on_cursor_position_changed);
 
     glfwGetWindowSize(window, &window_width, &window_height);
     glfwGetCursorPos(window, &cursorx, &cursory);
 
-    on_window_size_changed(window, window_width, window_height);
+    update_viewport(window_width, window_height);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_BLEND);
@@ -152,6 +162,14 @@ void Graphics::shutdown()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+void Graphics::set_aspect(int width, int height)
+{
+    aspect_width = width;
+    aspect_height = height;
+
+    update_viewport(window_width, window_height);
 }
 
 void Graphics::begin_frame()

@@ -44,7 +44,7 @@ private:
     const unsigned int diffuse_speed_index = 3;
     const unsigned int decay_speed_index = 4;
 
-    const size_t steps_per_frame = 2;
+    const size_t steps_per_frame = 1;
 
     float move_speed = 300.0f;
     float turn_speed = 1200.0f;
@@ -58,6 +58,7 @@ private:
 
 public:
     SlimeSimulator(size_t num_agents, const glm::ivec2 &size);
+    SlimeSimulator(const std::string &image_path);
     ~SlimeSimulator();
 
     void update(float dt);
@@ -67,5 +68,9 @@ public:
     void update_debug_window();
 
 private:
+    SlimeSimulator();
+
+    void initialize(const std::vector<Agent> &agents, const glm::ivec2 &size);
+
     void step_update(float dt);
 };

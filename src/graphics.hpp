@@ -11,5 +11,7 @@ namespace Graphics
     void begin_frame();
     void end_frame();
 
+    void set_aspect(int width, int height);
+
     glm::vec2 get_normalized_cursor_position();
 };

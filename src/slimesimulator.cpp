@@ -6,35 +6,30 @@
 #include <iostream>
 #include "calc.hpp"
 #include "timer.hpp"
+#include "graphics.hpp"
 
-SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
-    : size(size), num_agents(num_agents),
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+SlimeSimulator::SlimeSimulator()
+    : size(0), num_agents(0),
     agent_shader("assets/shaders/agent.comp"),
-    diffuse_shader("assets/shaders/diffuse.comp"),
-    trail_texture(size, GL_RGBA32F),
-    diffused_trail_texture(size, GL_RGBA32F)
+    diffuse_shader("assets/shaders/diffuse.comp")
 {
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
+}
 
-    glm::vec2 center = glm::vec2(size) / 2.0f;
-    float max_radius = std::min(size.x, size.y) / 8.0f;
+void SlimeSimulator::initialize(const std::vector<Agent> &agents, const glm::ivec2 &size)
+{
+    // FIXME: Remove global state
+    Graphics::set_aspect(size.x, size.y);
 
-    std::vector<Agent> agents(num_agents);
-    for (size_t i = 0; i < num_agents; i++)
-    {
-        float angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
-        Agent &agent = agents[i];
-        agent.position = center + glm::vec2(glm::cos(angle), glm::sin(angle)) * Calc::frandrange(0.0f, max_radius);
-        agent.angle = glm::pi<float>() + angle;
+    this->num_agents = agents.size();
+    this->size = size;
 
-        agent.color.r = Calc::frand();
-        agent.color.g = Calc::frand();
-        agent.color.b = Calc::frand();
-        agent.color.a = 1.0f;
-
-        // agent.color = glm::vec4(1.0f);
-    }
+    this->trail_texture.initialize(size, GL_RGBA32F);
+    this->diffused_trail_texture.initialize(size, GL_RGBA32F);
 
     glCreateBuffers(1, &this->vbo_agent);
     glNamedBufferData(this->vbo_agent, this->num_agents * sizeof(Agent),
@@ -44,6 +39,12 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
 
     std::vector<glm::vec4> trail_pixels(size.x * size.y,
             glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+    for (auto &agent : agents)
+    {
+        glm::ivec2 pixel = glm::ivec2(agent.position);
+        trail_pixels[pixel.y * this->size.x + pixel.x] = agent.color;
+    }
 
     this->trail_texture.set_data(trail_pixels.data());
 
@@ -65,6 +66,68 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
 
     this->diffuse_shader.bind();
     this->diffuse_shader.set_ivec2(this->bounds_index, this->size);
+}
+
+SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
+    : SlimeSimulator()
+{
+    glm::vec2 center = glm::vec2(size) / 2.0f;
+    float max_radius = std::min(size.x, size.y) / 8.0f;
+
+    std::vector<Agent> agents(num_agents);
+    for (size_t i = 0; i < num_agents; i++)
+    {
+        float angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+        Agent &agent = agents[i];
+        agent.position = center + glm::vec2(glm::cos(angle), glm::sin(angle)) * Calc::frandrange(0.0f, max_radius);
+        agent.angle = glm::pi<float>() + angle;
+
+        agent.color.r = Calc::frand();
+        agent.color.g = Calc::frand();
+        agent.color.b = Calc::frand();
+        agent.color.a = 1.0f;
+    }
+
+    this->initialize(agents, size);
+}
+
+SlimeSimulator::SlimeSimulator(const std::string &image_path)
+    : SlimeSimulator()
+{
+    int channels;
+    glm::ivec2 size;
+
+    unsigned char *data = stbi_load(image_path.c_str(), &size.x, &size.y, &channels, 4);
+
+    assert(data);
+
+    std::vector<Agent> agents(size.x * size.y);
+
+    for (int y = 0; y < size.y; y++)
+    {
+        for (int x = 0; x < size.x; x++)
+        {
+            int y_inverse = size.y - y - 1;
+            int offset = (y_inverse * size.x + x) * 4;
+            unsigned char r = data[offset + 0];
+            unsigned char g = data[offset + 1];
+            unsigned char b = data[offset + 2];
+            unsigned char a = data[offset + 3];
+
+            Agent &agent = agents[y * size.x + x];
+            agent.position = glm::vec2(x + 0.5f, y + 0.5f);
+            agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+
+            agent.color.r = r / 255.0f;
+            agent.color.g = g / 255.0f;
+            agent.color.b = b / 255.0f;
+            agent.color.a = a / 255.0f;
+        }
+    }
+
+    stbi_image_free(data);
+
+    this->initialize(agents, size);
 }
 
 SlimeSimulator::~SlimeSimulator()

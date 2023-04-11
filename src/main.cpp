@@ -39,7 +39,8 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(1000000, glm::ivec2(2560, 1440));
+    // SlimeSimulator simulator(250000, glm::ivec2(1920, 1080));
+    SlimeSimulator simulator("assets/images/horse.jpg");
 
     Timer frame_timer;
 
