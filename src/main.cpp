@@ -39,8 +39,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    glm::ivec2 texture_size(1920, 1080);
-    SlimeSimulator simulator(0.15f, texture_size);
+    SlimeSimulator simulator(1000000, glm::ivec2(1920, 1080));
 
     Timer frame_timer;
 
@@ -56,14 +55,7 @@ int main()
         simulator.update(dt);
 
         render_shader.bind();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        {
-            glBindTextureUnit(0, simulator.agents()->get_id());
-        }
-        else
-        {
-            glBindTextureUnit(0, simulator.trail()->get_id());
-        }
+        glBindTextureUnit(0, simulator.trail()->get_id());
 
         quad.render();
 

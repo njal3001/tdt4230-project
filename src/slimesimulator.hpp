@@ -18,22 +18,16 @@ private:
     glm::ivec2 size;
     size_t num_agents;
 
-    ComputeShader agent_move_shader;
-    ComputeShader agent_sense_shader;
+    ComputeShader agent_shader;
     ComputeShader diffuse_shader;
-    ComputeShader occupied_shader;
 
-    Texture occupied_texture;
     Texture trail_texture;
     Texture diffused_trail_texture;
-    Texture agent_texture;
 
     unsigned int vbo_agent;
 
     const unsigned int trail_texture_unit = 0;
     const unsigned int diffused_trail_texture_unit = 1;
-    const unsigned int agent_texture_unit = 2;
-    const unsigned int occupied_texture_unit = 3;
 
     const unsigned int bounds_index = 0;
     const unsigned int dt_index = 1;
@@ -51,7 +45,7 @@ private:
     const unsigned int decay_speed_index = 4;
 
     const size_t steps_per_frame = 2;
-    const size_t num_species = 1;
+    const size_t num_species = 2;
 
     float move_speed = 30.0f;
     float turn_speed = 360.0f;
@@ -64,13 +58,12 @@ private:
     float decay_speed = 0.2f;
 
 public:
-    SlimeSimulator(float agent_percentage, const glm::ivec2 &size);
+    SlimeSimulator(size_t num_agents, const glm::ivec2 &size);
     ~SlimeSimulator();
 
     void update(float dt);
 
     const Texture *trail() const;
-    const Texture *agents() const;
 
     void update_debug_window();
 
