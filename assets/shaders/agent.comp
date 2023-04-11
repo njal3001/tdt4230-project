@@ -8,8 +8,8 @@ struct Agent
 {
     vec2 position;
     float angle;
-    int species_index;
-    vec4 species_mask;
+    float padding;
+    vec4 color;
 };
 
 layout (std430, binding = 0) buffer agent_buffer {
@@ -65,8 +65,6 @@ float sense(Agent agent, float angle_offset)
     ivec2 sense_center =
         ivec2(agent.position + sense_direction * sense_distance);
 
-    vec4 species_weight = 2.0 * agent.species_mask - 1.0;
-
     float sum = 0.0;
     for (int ox = -sense_size; ox <= sense_size; ox++)
     {
@@ -75,7 +73,9 @@ float sense(Agent agent, float angle_offset)
             int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
             int y = int(mid(0, sense_center.y + oy, bounds.y - 1.0));
 
-            sum += dot(species_weight, imageLoad(trail_image, ivec2(x, y)));
+            vec4 diff = agent.color - imageLoad(trail_image, ivec2(x, y));
+            sum += 1.0 - length(diff);
+            // sum += dot(vec4(1.0f), imageLoad(trail_image, ivec2(x, y)));
         }
     }
 
@@ -114,15 +114,15 @@ void main()
     }
     else if (sense_forward < sense_right && sense_forward < sense_left)
     {
-        new_angle += 2.0 * (random_turn_weight - 1.0) * turn_speed_rad * dt;
+        new_angle += (1.0 - 2.0 * step(random_turn_weight, 0.5)) * turn_speed_rad * dt;
     }
     else if (sense_left < sense_right)
     {
-        new_angle += random_turn_weight * turn_speed_rad * dt;
+        new_angle += turn_speed_rad * dt;
     }
     else if (sense_right < sense_left)
     {
-        new_angle -= random_turn_weight * turn_speed_rad * dt;
+        new_angle -= turn_speed_rad * dt;
     }
 
     vec2 velocity = vec2(cos(agent.angle), sin(agent.angle)) * move_speed;
@@ -145,7 +145,7 @@ void main()
         vec4 prev_trail =
             imageLoad(trail_image, prev_pixel_position);
         vec4 new_trail = min(vec4(1.0),
-                prev_trail + agent.species_mask * trail_weight * dt);
+                prev_trail + agent.color * trail_weight * dt);
         imageStore(trail_image, new_pixel_position, new_trail);
     }
 

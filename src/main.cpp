@@ -39,20 +39,30 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(1000000, glm::ivec2(1920, 1080));
+    SlimeSimulator simulator(1000000, glm::ivec2(2560, 1440));
 
     Timer frame_timer;
 
     Mesh quad = Mesh::quad(glm::vec2(0.0f), glm::vec2(2.0f));
 
+    bool run_simulation = false;
+
     while (!glfwWindowShouldClose(window))
     {
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            run_simulation = !run_simulation;
+        }
+
         Graphics::begin_frame();
         simulator.update_debug_window();
 
-
         float dt = frame_timer.delta();
-        simulator.update(dt);
+
+        if (run_simulation)
+        {
+            simulator.update(dt);
+        }
 
         render_shader.bind();
         glBindTextureUnit(0, simulator.trail()->get_id());

@@ -10,8 +10,8 @@ private:
     {
         glm::vec2 position;
         float angle;
-        int species_index;
-        glm::vec4 species_mask;
+        float padding;
+        glm::vec4 color;
     };
 
 private:
@@ -45,17 +45,16 @@ private:
     const unsigned int decay_speed_index = 4;
 
     const size_t steps_per_frame = 2;
-    const size_t num_species = 2;
 
-    float move_speed = 30.0f;
-    float turn_speed = 360.0f;
-    float trail_weight = 50.0f;
+    float move_speed = 300.0f;
+    float turn_speed = 1200.0f;
+    float trail_weight = 1.0f;
     float sense_spacing = 45.0f;
-    int sense_distance = 9;
+    int sense_distance = 30;
     int sense_size = 1;
 
     float diffuse_speed = 3.0f;
-    float decay_speed = 0.2f;
+    float decay_speed = 0.7f;
 
 public:
     SlimeSimulator(size_t num_agents, const glm::ivec2 &size);

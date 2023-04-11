@@ -18,27 +18,22 @@ SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
     assert(diffuse_shader.valid());
 
     glm::vec2 center = glm::vec2(size) / 2.0f;
-    float max_radius = std::min(size.x, size.y) / 2.0f;
+    float max_radius = std::min(size.x, size.y) / 8.0f;
 
     std::vector<Agent> agents(num_agents);
     for (size_t i = 0; i < num_agents; i++)
     {
+        float angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
         Agent &agent = agents[i];
-        agent.position = center;
-        agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+        agent.position = center + glm::vec2(glm::cos(angle), glm::sin(angle)) * Calc::frandrange(0.0f, max_radius);
+        agent.angle = glm::pi<float>() + angle;
 
-        if (num_species == 1)
-        {
-            agent.species_index = 0;
-            agent.species_mask = glm::vec4(1.0);
-        }
-        else
-        {
-            agent.species_index = Calc::randrange(0, this->num_species);
-            agent.species_mask = glm::vec4(agent.species_index == 0,
-                    agent.species_index == 1, agent.species_index == 2,
-                    1.0f);
-        }
+        agent.color.r = Calc::frand();
+        agent.color.g = Calc::frand();
+        agent.color.b = Calc::frand();
+        agent.color.a = 1.0f;
+
+        // agent.color = glm::vec4(1.0f);
     }
 
     glCreateBuffers(1, &this->vbo_agent);
