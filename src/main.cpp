@@ -39,7 +39,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    glm::ivec2 size(320, 180);
+    glm::ivec2 size(1920, 1080);
 
     SlimeSimulator simulator(0.03f, size);
 

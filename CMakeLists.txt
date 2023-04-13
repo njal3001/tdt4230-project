@@ -23,6 +23,7 @@ add_executable(slime-simulator
     src/slimesimulator.cpp
     src/texture.cpp
     src/mesh.cpp
+    src/maze.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp

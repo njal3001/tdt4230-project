@@ -6,7 +6,7 @@
 #include <iostream>
 #include "calc.hpp"
 #include "timer.hpp"
-#include "graphics.hpp"
+#include "maze.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -30,11 +30,25 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
             glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     std::vector<unsigned int> occupied_pixels(size.x * size.y, 0);
 
-    std::vector<glm::vec4> wall_pixels(size.x * size.y, glm::vec4(0.0f));
+    std::vector<glm::vec4> wall_pixels(size.x * size.y, glm::vec4(0.3f, 0.3f, 0.3f, 1.0f));
 
-    for (size_t i = 0; i < 5 * size.x; i++)
+    int maze_divider = 16;
+    Maze maze(size / maze_divider);
+
+    const std::vector<Maze::Node> &nodes = maze.get_nodes();
+
+    for (int y = 0; y < size.y; y++)
     {
-        wall_pixels[i + size.x * (size.y / 2)] = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
+        for (int x = 0; x < size.x; x++)
+        {
+            int mx = x / maze_divider;
+            int my = y / maze_divider;
+            int maze_index = my * size.x / maze_divider + mx;
+            if (nodes[maze_index].visited)
+            {
+                wall_pixels[y * size.x + x] = glm::vec4(0.0f);
+            }
+        }
     }
 
     std::vector<Agent> agents;
