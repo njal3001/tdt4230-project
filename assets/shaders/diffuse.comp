@@ -12,8 +12,9 @@ uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 1) float dt;
 uniform layout(location = 2) float time;
 
-uniform layout(location = 3) float decay;
-uniform layout(location = 4) int blur_radius;
+uniform layout(location = 3) float diffuse_speed;
+uniform layout(location = 4) float decay_speed;
+uniform layout(location = 5) int blur_radius;
 
 void main()
 {
@@ -39,10 +40,13 @@ void main()
         }
     }
 
-    vec4 current_value = imageLoad(trail_image, ivec2(id.x, id.y));
     vec4 average = sum / pow(blur_radius * 2 + 1, 2);
+    vec4 current_value = imageLoad(trail_image, ivec2(id.x, id.y));
 
-    vec4 diffused = average * decay;
+    // TODO: Better way to interpolate?
+    average = mix(current_value, average, min(1.0, diffuse_speed * dt));
+
+    vec4 diffused = max(vec4(0.0), average - decay_speed * dt);
 
     imageStore(diffused_trail_image, ivec2(id.x, id.y), diffused);
 }
