@@ -20,7 +20,8 @@ SlimeSimulator::SlimeSimulator()
     assert(diffuse_shader.valid());
 }
 
-void SlimeSimulator::initialize(const std::vector<Agent> &agents, const glm::ivec2 &size)
+void SlimeSimulator::initialize(const std::vector<Agent> &agents,
+        const glm::ivec2 &size)
 {
     // FIXME: Remove global state
     Graphics::set_aspect(size.x, size.y);
@@ -68,62 +69,118 @@ void SlimeSimulator::initialize(const std::vector<Agent> &agents, const glm::ive
     this->diffuse_shader.set_ivec2(this->bounds_index, this->size);
 }
 
-SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size)
+SlimeSimulator::SlimeSimulator(size_t num_agents, const glm::ivec2 &size,
+        SpawnType spawn_type)
     : SlimeSimulator()
 {
     glm::vec2 center = glm::vec2(size) / 2.0f;
-    float max_radius = std::min(size.x, size.y) / 8.0f;
+    float max_radius = std::min(size.x, size.y) / 2.0f;
 
     std::vector<Agent> agents(num_agents);
     for (size_t i = 0; i < num_agents; i++)
     {
-        float angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
         Agent &agent = agents[i];
-        agent.position = center + glm::vec2(glm::cos(angle), glm::sin(angle)) * Calc::frandrange(0.0f, max_radius);
-        agent.angle = glm::pi<float>() + angle;
+        switch (spawn_type)
+        {
+            case SpawnType::inward_circle:
+            {
+                float angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+                agent.position = center +
+                    glm::vec2(glm::cos(angle), glm::sin(angle)) *
+                    Calc::frandrange(0.0f, max_radius);
+                agent.angle = glm::pi<float>() + angle;
 
-        agent.color.r = Calc::frand();
-        agent.color.g = Calc::frand();
-        agent.color.b = Calc::frand();
-        agent.color.a = 1.0f;
+                break;
+            }
+            case SpawnType::square:
+            {
+                agent.position.x = Calc::frandrange(0.0f, size.x);
+                agent.position.y = Calc::frandrange(0.0f, size.y);
+                agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+
+                break;
+            }
+            case SpawnType::center:
+            {
+                agent.position = center;
+                agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+
+                break;
+            }
+        }
+
+        if (Calc::frand() > 0.5f)
+        {
+            agent.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        }
+        else
+        {
+            agent.color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+        }
+
+        // agent.color = glm::vec4(1.0f);
     }
 
     this->initialize(agents, size);
 }
 
-SlimeSimulator::SlimeSimulator(const std::string &image_path)
+SlimeSimulator::SlimeSimulator(size_t num_agents, const std::string &image_path)
     : SlimeSimulator()
 {
     int channels;
     glm::ivec2 size;
 
-    unsigned char *data = stbi_load(image_path.c_str(), &size.x, &size.y, &channels, 4);
+    unsigned char *data = stbi_load(image_path.c_str(),
+            &size.x, &size.y, &channels, 4);
 
     assert(data);
 
-    std::vector<Agent> agents(size.x * size.y);
-
-    for (int y = 0; y < size.y; y++)
+    std::vector<Agent> agents(num_agents);
+    for (size_t i = 0; i < num_agents; i++)
     {
-        for (int x = 0; x < size.x; x++)
-        {
-            int y_inverse = size.y - y - 1;
-            int offset = (y_inverse * size.x + x) * 4;
-            unsigned char r = data[offset + 0];
-            unsigned char g = data[offset + 1];
-            unsigned char b = data[offset + 2];
-            unsigned char a = data[offset + 3];
+        Agent &agent = agents[i];
 
-            Agent &agent = agents[y * size.x + x];
-            agent.position = glm::vec2(x + 0.5f, y + 0.5f);
-            agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+        agent.position.x = Calc::frandrange(0.0f, size.x);
+        agent.position.y = Calc::frandrange(0.0f, size.y);
+        agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
 
-            agent.color.r = r / 255.0f;
-            agent.color.g = g / 255.0f;
-            agent.color.b = b / 255.0f;
-            agent.color.a = a / 255.0f;
-        }
+        int x = agent.position.x;
+        int y = agent.position.y;
+
+        int y_inverse = size.y - y - 1;
+        int offset = (y_inverse * size.x + x) * 4;
+        unsigned char r = data[offset + 0];
+        unsigned char g = data[offset + 1];
+        unsigned char b = data[offset + 2];
+        unsigned char a = data[offset + 3];
+
+        agent.color.r = r / 255.0f;
+        agent.color.g = g / 255.0f;
+        agent.color.b = b / 255.0f;
+        agent.color.a = a / 255.0f;
     }
+
+    // for (int y = 0; y < size.y; y++)
+    // {
+    //     for (int x = 0; x < size.x; x++)
+    //     {
+    //         int y_inverse = size.y - y - 1;
+    //         int offset = (y_inverse * size.x + x) * 4;
+    //         unsigned char r = data[offset + 0];
+    //         unsigned char g = data[offset + 1];
+    //         unsigned char b = data[offset + 2];
+    //         unsigned char a = data[offset + 3];
+    //
+    //         Agent &agent = agents[y * size.x + x];
+    //         agent.position = glm::vec2(x + 0.5f, y + 0.5f);
+    //         agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+    //
+    //         agent.color.r = r / 255.0f;
+    //         agent.color.g = g / 255.0f;
+    //         agent.color.b = b / 255.0f;
+    //         agent.color.a = a / 255.0f;
+    //     }
+    // }
 
     stbi_image_free(data);
 
@@ -152,7 +209,7 @@ void SlimeSimulator::step_update(float dt)
     this->agent_shader.set_float(
             this->move_speed_index, this->move_speed);
     this->agent_shader.set_float(
-            this->turn_speed_index, this->turn_speed);
+            this->turn_amount_index, this->turn_amount);
     this->agent_shader.set_float(
             this->trail_weight_index, this->trail_weight);
     this->agent_shader.set_float(this->sense_spacing_index,
@@ -167,9 +224,7 @@ void SlimeSimulator::step_update(float dt)
     this->diffuse_shader.set_float(this->dt_index, dt);
     this->diffuse_shader.set_float(this->time_index, Timer::time());
     this->diffuse_shader.set_float(
-            this->diffuse_speed_index, this->diffuse_speed);
-    this->diffuse_shader.set_float(
-            this->decay_speed_index, this->decay_speed);
+            this->decay_index, this->decay);
 
     this->diffuse_shader.dispatch_and_wait();
 
@@ -187,7 +242,7 @@ void SlimeSimulator::update_debug_window()
 
     ImGui::DragFloat("Move Speed", &this->move_speed, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
-    ImGui::DragFloat("Turn Speed", &this->turn_speed, 1.0f, 0.0f,
+    ImGui::DragFloat("Turn Amount", &this->turn_amount, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
     ImGui::DragFloat("Trail Weight", &this->trail_weight, 1.0f, 0.0f,
             std::numeric_limits<float>::max());
@@ -197,7 +252,8 @@ void SlimeSimulator::update_debug_window()
     ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 3);
 
     ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.1f, 0.0f, 5.0f);
-    ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.1f, 0.0f, 5.0f);
+    ImGui::DragFloat("Decay", &this->decay, 0.01f, 0.0f, 1.0f);
+    ImGui::DragInt("Blur Radius", &this->blur_radius, 1, 1, 5);
 
     ImGui::End();
 }

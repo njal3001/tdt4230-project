@@ -39,21 +39,26 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    // SlimeSimulator simulator(250000, glm::ivec2(1920, 1080));
-    SlimeSimulator simulator("assets/images/horse.jpg");
+    SlimeSimulator simulator(1000000, glm::ivec2(1920, 1080),
+            SlimeSimulator::SpawnType::inward_circle);
+    // SlimeSimulator simulator(1500000, "assets/images/leonid.jpg");
 
     Timer frame_timer;
 
     Mesh quad = Mesh::quad(glm::vec2(0.0f), glm::vec2(2.0f));
 
     bool run_simulation = false;
+    bool space_down = false;
 
     while (!glfwWindowShouldClose(window))
     {
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        bool new_space_down = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+        if (!space_down && new_space_down)
         {
             run_simulation = !run_simulation;
         }
+
+        space_down = new_space_down;
 
         Graphics::begin_frame();
         simulator.update_debug_window();
