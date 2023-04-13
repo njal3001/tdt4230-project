@@ -19,7 +19,8 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
     trail_texture(size, GL_RGBA32F),
     diffused_trail_texture(size, GL_RGBA32F),
     occupied_texture(size, GL_R32UI),
-    agent_texture(size, GL_RGBA32F)
+    agent_texture(size, GL_RGBA32F),
+    wall_texture(size, GL_RGBA32F)
 {
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
@@ -29,11 +30,21 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
             glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     std::vector<unsigned int> occupied_pixels(size.x * size.y, 0);
 
+    std::vector<glm::vec4> wall_pixels(size.x * size.y, glm::vec4(0.0f));
+
+    for (size_t i = 0; i < 5 * size.x; i++)
+    {
+        wall_pixels[i + size.x * (size.y / 2)] = glm::vec4(0.3f, 0.3f, 0.3f, 1.0f);
+    }
+
     std::vector<Agent> agents;
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
+            if (wall_pixels[y * size.x + x].a > 0.0f)
+                continue;
+
             if (Calc::frand() > agent_percentage)
                 continue;
 
@@ -55,12 +66,14 @@ SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
     this->trail_texture.set_data(trail_pixels.data());
     this->occupied_texture.set_data(occupied_pixels.data());
     this->agent_texture.set_data(trail_pixels.data());
+    this->wall_texture.set_data(wall_pixels.data());
 
     this->trail_texture.bind_to_unit(this->trail_texture_unit);
     this->diffused_trail_texture.bind_to_unit(
             this->diffused_trail_texture_unit);
     this->occupied_texture.bind_to_unit(this->occupied_texture_unit);
     this->agent_texture.bind_to_unit(this->agent_texture_unit);
+    this->wall_texture.bind_to_unit(this->wall_texture_unit);
 
     glCreateBuffers(1, &this->vbo_agent);
     glNamedBufferData(this->vbo_agent, this->num_agents * sizeof(Agent),
@@ -137,6 +150,11 @@ const Texture *SlimeSimulator::trail() const
 const Texture *SlimeSimulator::agents() const
 {
     return &this->agent_texture;
+}
+
+const Texture *SlimeSimulator::walls() const
+{
+    return &this->wall_texture;
 }
 
 void SlimeSimulator::update_debug_window()

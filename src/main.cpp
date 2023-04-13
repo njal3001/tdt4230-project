@@ -39,7 +39,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    glm::ivec2 size(1920, 1080);
+    glm::ivec2 size(320, 180);
 
     SlimeSimulator simulator(0.03f, size);
 
@@ -82,8 +82,11 @@ int main()
         {
             glBindTextureUnit(0, simulator.trail()->get_id());
         }
-
         quad.render();
+
+        glBindTextureUnit(0, simulator.walls()->get_id());
+        quad.render();
+
 
         Graphics::end_frame();
 

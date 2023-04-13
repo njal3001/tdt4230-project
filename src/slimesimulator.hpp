@@ -25,6 +25,7 @@ private:
     Texture diffused_trail_texture;
     Texture occupied_texture;
     Texture agent_texture;
+    Texture wall_texture;
 
     unsigned int vbo_agent;
 
@@ -32,6 +33,7 @@ private:
     const unsigned int diffused_trail_texture_unit = 1;
     const unsigned int occupied_texture_unit = 2;
     const unsigned int agent_texture_unit = 3;
+    const unsigned int wall_texture_unit = 4;
 
     const unsigned int bounds_index = 0;
     const unsigned int dt_index = 1;
@@ -70,6 +72,7 @@ public:
 
     const Texture *trail() const;
     const Texture *agents() const;
+    const Texture *walls() const;
 
     void update_debug_window();
 

@@ -17,6 +17,7 @@ layout(rgba32f, binding = 0) uniform image2D trail_image;
 layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
 layout(r32ui, binding = 2) uniform uimage2D occupied_image;
 layout(rgba32f, binding = 3) uniform image2D agent_image;
+layout(rgba32f, binding = 4) uniform image2D wall_image;
 
 uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 1) float dt;
