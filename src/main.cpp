@@ -39,9 +39,11 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(1000000, glm::ivec2(1920, 1080),
-            SlimeSimulator::SpawnType::inward_circle);
-    // SlimeSimulator simulator(1500000, "assets/images/leonid.jpg");
+    glm::ivec2 size(1920, 1080);
+
+    SlimeSimulator simulator(0.03f, size);
+
+    Graphics::set_aspect(size.x, size.y);
 
     Timer frame_timer;
 
@@ -71,7 +73,15 @@ int main()
         }
 
         render_shader.bind();
-        glBindTextureUnit(0, simulator.trail()->get_id());
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        {
+            glBindTextureUnit(0, simulator.agents()->get_id());
+        }
+        else
+        {
+            glBindTextureUnit(0, simulator.trail()->get_id());
+        }
 
         quad.render();
 
