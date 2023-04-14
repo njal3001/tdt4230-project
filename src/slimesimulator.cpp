@@ -144,11 +144,11 @@ void SlimeSimulator::update_debug_window()
     ImGui::Begin("Debug");
 
     ImGui::DragFloat("Move Speed", &this->move_speed, 1.0f, 0.0f,
-            std::numeric_limits<float>::max());
+            (std::numeric_limits<float>::max)());
     ImGui::DragFloat("Turn Amount", &this->turn_amount, 1.0f, 0.0f,
-            std::numeric_limits<float>::max());
+            (std::numeric_limits<float>::max)());
     ImGui::DragFloat("Trail Weight", &this->trail_weight, 0.1f, 0.0f,
-            std::numeric_limits<float>::max());
+            (std::numeric_limits<float>::max)());
     ImGui::DragFloat("Sense Spacing",
             &this->sense_spacing, 1.0f, 0.0f, 180.0f);
     ImGui::DragInt("Sense Distance", &this->sense_distance, 1, 1, 100);
