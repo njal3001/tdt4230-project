@@ -2,13 +2,14 @@
 
 #define PI 3.1415926535
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent
 {
     vec2 position;
     float angle;
     float padding;
+    vec4 color;
 };
 
 layout (std430, binding = 0) buffer agent_buffer {
@@ -17,8 +18,6 @@ layout (std430, binding = 0) buffer agent_buffer {
 
 layout(rgba32f, binding = 0) uniform image2D trail_image;
 layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
-layout(r32ui, binding = 2) uniform uimage2D occupied_image;
-layout(rgba32f, binding = 3) uniform image2D agent_image;
 
 uniform layout(location = 0) ivec2 bounds;
 uniform layout(location = 1) float dt;
@@ -58,6 +57,25 @@ float scale_to_unit(uint value)
     return value / 4294967295.0;
 }
 
+vec4 approach(vec4 current, vec4 target, float amount)
+{
+    vec4 diff = target - current;
+    float dist = length(diff);
+
+    if (dist == 0.0)
+    {
+        return current;
+    }
+    if (dist <= amount)
+    {
+        return target;
+    }
+
+    vec4 dir = normalize(diff);
+
+    return current + dir * amount;
+}
+
 float sense(Agent agent, float angle_offset)
 {
     float sense_angle = agent.angle + angle_offset;
@@ -74,48 +92,21 @@ float sense(Agent agent, float angle_offset)
             int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
             int y = int(mid(0.0, sense_center.y + oy, bounds.y - 1.0));
 
-            sum += dot(vec4(1.0f), imageLoad(trail_image, ivec2(x, y)));
+            vec4 diff = agent.color - imageLoad(trail_image, ivec2(x, y));
+            sum -= length(diff);
         }
     }
 
     return sum;
 }
 
-bool try_move(uint id, ivec2 position, ivec2 previous_position)
-{
-    if (position == previous_position)
-    {
-        return true;
-    }
-
-    // Check if target position is vacant
-    uint prev_id = imageAtomicCompSwap(occupied_image, position, 0, id + 1);
-    if (prev_id == 0)
-    {
-        // Mark previous position as vacant
-        imageStore(occupied_image, previous_position, ivec4(0));
-        return true;
-    }
-
-    return false;
-}
-
 void main()
 {
-	ivec2 pixel_position = ivec2(gl_GlobalInvocationID.xy);
-    if (pixel_position.x >= bounds.x || pixel_position.y >= bounds.y)
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= num_agents)
     {
         return;
     }
-
-    uint occupied = imageLoad(occupied_image,
-            ivec2(pixel_position.x, pixel_position.y)).x;
-    if (occupied == 0)
-    {
-        return;
-    }
-
-	uint id = occupied - 1;
 
     Agent agent = agents[id];
 
@@ -132,29 +123,14 @@ void main()
     vec2 velocity = vec2(cos(agent.angle), sin(agent.angle)) * move_speed;
     new_position += velocity * dt;
 
-    if (new_position.x <= 0.0 || new_position.x > bounds.x - 1.0 ||
-            new_position.y <= 0.0 || new_position.y > bounds.y - 1.0)
-    {
-        new_position.x = mid(0.0, new_position.x, bounds.x - 1.0);
-        new_position.y = mid(0.0, new_position.y, bounds.y - 1.0);
-
-        new_angle = random_angle;
-    }
+    new_position.x = mod(new_position.x, bounds.x);
+    new_position.y = mod(new_position.y, bounds.y);
 
     ivec2 new_pixel_position = ivec2(new_position);
 
-    bool did_move = try_move(id, new_pixel_position, pixel_position);
-    if (did_move)
-    {
-        vec4 prev_trail = imageLoad(trail_image, new_pixel_position);
-        vec4 new_trail = prev_trail + trail_weight * dt;
-        imageStore(trail_image, new_pixel_position, new_trail);
-    }
-    else
-    {
-        new_position = agent.position;
-        new_angle = random_angle;
-    }
+    vec4 prev_trail = imageLoad(trail_image, new_pixel_position);
+    vec4 new_trail = approach(prev_trail, agent.color, trail_weight * dt);
+    imageStore(trail_image, new_pixel_position, new_trail);
 
     float sense_spacing_rad = to_rad(sense_spacing);
     float sense_forward = sense(agent, 0.0);

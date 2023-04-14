@@ -7,156 +7,167 @@
 #include "calc.hpp"
 #include "timer.hpp"
 #include "graphics.hpp"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-SlimeSimulator::SlimeSimulator(float agent_percentage, const glm::ivec2 &size)
-    : size(size), num_agents(0),
+SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
+    : num_agents(0),
     agent_shader("assets/shaders/agent.comp"),
-    diffuse_shader("assets/shaders/diffuse.comp"),
-    occupied_shader("assets/shaders/occupied.comp"),
-    trail_texture(size, GL_RGBA32F),
-    diffused_trail_texture(size, GL_RGBA32F),
-    occupied_texture(size, GL_R32UI),
-    agent_texture(size, GL_RGBA32F)
+    diffuse_shader("assets/shaders/diffuse.comp")
 {
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
-    assert(occupied_shader.valid());
+
+    int channels;
+    float *data = stbi_loadf(image_path.c_str(),
+            &size.x, &size.y, &channels, 4);
+    assert(data);
+
+    trail_texture.initialize(size, GL_RGBA32F);
+    diffused_trail_texture.initialize(size, GL_RGBA32F);
 
     std::vector<glm::vec4> trail_pixels(size.x * size.y,
             glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    std::vector<unsigned int> occupied_pixels(size.x * size.y, 0);
 
-    std::vector<Agent> agents;
+    this->num_agents = std::max(num_agents, size.x * size.y);
+
+    std::vector<Agent> agents(this->num_agents);
     for (int y = 0; y < size.y; y++)
     {
         for (int x = 0; x < size.x; x++)
         {
-            if (Calc::frand() > agent_percentage)
-                continue;
-
-            Agent agent;
+            Agent &agent = agents[y * size.x + x];
             agent.position.x = x + 0.5f;
             agent.position.y = y + 0.5f;
-            agent.angle = Calc::frandrange(0.0f, 2.0f * glm::pi<float>());
+            agent.angle = Calc::frand() * 2.0f * glm::pi<float>();
 
-            agents.push_back(agent);
-            this->num_agents++;
+            int y_inverse = size.y - y - 1;
+            int offset = (y_inverse * size.x + x) * 4;
+            agent.color.r = data[offset + 0];
+            agent.color.g = data[offset + 1];
+            agent.color.b = data[offset + 2];
+            agent.color.a = data[offset + 3];
 
-            glm::ivec2 pixel = glm::ivec2(agent.position);
-            occupied_pixels[pixel.y * this->size.x + pixel.x] =
-                this->num_agents;
-            trail_pixels[pixel.y * this->size.x + pixel.x] = glm::vec4(1.0);
+            trail_pixels[y * size.x + x] = agent.color;
         }
     }
 
-    this->trail_texture.set_data(trail_pixels.data());
-    this->occupied_texture.set_data(occupied_pixels.data());
-    this->agent_texture.set_data(trail_pixels.data());
+    for (int i = size.x * size.y; i < this->num_agents; i++)
+    {
+        Agent &agent = agents[i];
 
-    this->trail_texture.bind_to_unit(this->trail_texture_unit);
-    this->diffused_trail_texture.bind_to_unit(
-            this->diffused_trail_texture_unit);
-    this->occupied_texture.bind_to_unit(this->occupied_texture_unit);
-    this->agent_texture.bind_to_unit(this->agent_texture_unit);
+        int rx = Calc::randrange(0, size.x);
+        int ry = Calc::randrange(0, size.y);
 
-    glCreateBuffers(1, &this->vbo_agent);
-    glNamedBufferData(this->vbo_agent, this->num_agents * sizeof(Agent),
+        agent.position.x = rx + 0.5f;
+        agent.position.y = ry + 0.5f;
+        agent.angle = Calc::frand() * 2.0f * glm::pi<float>();
+
+        int y_inverse = size.y - ry - 1;
+        int offset = (y_inverse * size.x + rx) * 4;
+        agent.color.r = data[offset + 0];
+        agent.color.g = data[offset + 1];
+        agent.color.b = data[offset + 2];
+        agent.color.a = data[offset + 3];
+
+        trail_pixels[ry * size.x + rx] = agent.color;
+    }
+
+    trail_texture.set_data(trail_pixels.data());
+
+    trail_texture.bind_to_unit(trail_texture_unit);
+    diffused_trail_texture.bind_to_unit(diffused_trail_texture_unit);
+
+    glCreateBuffers(1, &vbo_agent);
+    glNamedBufferData(vbo_agent, this->num_agents * sizeof(Agent),
             agents.data(), GL_STATIC_COPY);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->vbo_agent);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo_agent);
 
-    glm::uvec3 work_group = glm::uvec3(std::ceil(this->size.x / 8.0f),
-            std::ceil(this->size.y / 8.0f), 1);
+    glm::uvec3 agent_work_group = glm::uvec3(std::ceil(num_agents / 64.0f),
+            1, 1);
+    glm::uvec3 image_work_group = glm::uvec3(std::ceil(size.x / 8.0f),
+            std::ceil(size.y / 8.0f), 1);
 
-    this->agent_shader.set_work_group(work_group);
-    this->diffuse_shader.set_work_group(work_group);
-    this->occupied_shader.set_work_group(work_group);
+    agent_shader.set_work_group(agent_work_group);
+    diffuse_shader.set_work_group(image_work_group);
 
-    this->agent_shader.bind();
-    this->agent_shader.set_ivec2(this->bounds_index, this->size);
-    this->agent_shader.set_int(this->num_agents_index, this->num_agents);
+    agent_shader.bind();
+    agent_shader.set_ivec2(bounds_index, size);
+    agent_shader.set_int(num_agents_index, num_agents);
 
-    this->diffuse_shader.bind();
-    this->diffuse_shader.set_ivec2(this->bounds_index, this->size);
+    diffuse_shader.bind();
+    diffuse_shader.set_ivec2(bounds_index, size);
 
-    this->occupied_shader.bind();
-    this->occupied_shader.set_ivec2(this->bounds_index, this->size);
+    stbi_image_free(data);
 }
 
 SlimeSimulator::~SlimeSimulator()
 {
-    glDeleteBuffers(1, &this->vbo_agent);
+    glDeleteBuffers(1, &vbo_agent);
 }
 
 void SlimeSimulator::update(float dt)
 {
-    float step_dt = dt / static_cast<float>(this->steps_per_frame);
-    for (size_t i = 0; i < this->steps_per_frame; i++)
+    float step_dt = dt / static_cast<float>(steps_per_frame);
+    for (size_t i = 0; i < steps_per_frame; i++)
     {
-        this->step_update(step_dt);
+        step_update(step_dt);
     }
 }
 
 void SlimeSimulator::step_update(float dt)
 {
-    this->agent_shader.bind();
-    this->agent_shader.set_float(this->dt_index, dt);
-    this->agent_shader.set_float(this->time_index, Timer::time());
-    this->agent_shader.set_float(this->move_speed_index, this->move_speed);
-    this->agent_shader.set_float(this->turn_amount_index, this->turn_amount);
-    this->agent_shader.set_float(this->trail_weight_index, this->trail_weight);
-    this->agent_shader.set_float(this->sense_spacing_index, this->sense_spacing);
-    this->agent_shader.set_int(this->sense_distance_index, this->sense_distance);
-    this->agent_shader.set_int(this->sense_size_index, this->sense_size);
-    this->agent_shader.dispatch_and_wait();
+    agent_shader.bind();
+    agent_shader.set_float(dt_index, dt);
+    agent_shader.set_float(time_index, Timer::time());
+    agent_shader.set_float(move_speed_index, move_speed);
+    agent_shader.set_float(turn_amount_index, turn_amount);
+    agent_shader.set_float(trail_weight_index, trail_weight);
+    agent_shader.set_float(sense_spacing_index, sense_spacing);
+    agent_shader.set_int(sense_distance_index, sense_distance);
+    agent_shader.set_int(sense_size_index, sense_size);
+    agent_shader.dispatch_and_wait();
 
-    this->diffuse_shader.bind();
-    this->diffuse_shader.set_float(this->dt_index, dt);
-    this->diffuse_shader.set_float(this->time_index, Timer::time());
-    this->diffuse_shader.set_float(this->diffuse_speed_index,
-            this->diffuse_speed);
-    this->diffuse_shader.set_float(this->decay_speed_index, this->decay_speed);
-    this->diffuse_shader.dispatch_and_wait();
+    diffuse_shader.bind();
+    diffuse_shader.set_float(dt_index, dt);
+    diffuse_shader.set_float(time_index, Timer::time());
+    diffuse_shader.set_float(diffuse_speed_index,
+            diffuse_speed);
+    diffuse_shader.set_float(decay_speed_index, decay_speed);
+    diffuse_shader.dispatch_and_wait();
 
-    this->occupied_shader.bind();
-    this->occupied_shader.set_float(this->dt_index, dt);
-    this->occupied_shader.set_float(this->time_index, Timer::time());
-    this->occupied_shader.dispatch_and_wait();
+    trail_texture.copy(&diffused_trail_texture);
+}
 
-    this->trail_texture.copy(&this->diffused_trail_texture);
+glm::ivec2 SlimeSimulator::map_size() const
+{
+    return size;
 }
 
 const Texture *SlimeSimulator::trail() const
 {
-    return &this->trail_texture;
-}
-
-const Texture *SlimeSimulator::agents() const
-{
-    return &this->agent_texture;
+    return &trail_texture;
 }
 
 void SlimeSimulator::update_debug_window()
 {
-    ImGui::Begin("Debug");
+    ImGui::Begin("Parameters");
 
-    ImGui::DragFloat("Move Speed", &this->move_speed, 1.0f, 0.0f,
+    ImGui::DragFloat("Move Speed", &move_speed, 1.0f, 0.0f,
             (std::numeric_limits<float>::max)());
-    ImGui::DragFloat("Turn Amount", &this->turn_amount, 1.0f, 0.0f,
+    ImGui::DragFloat("Turn Amount", &turn_amount, 1.0f, 0.0f,
             (std::numeric_limits<float>::max)());
-    ImGui::DragFloat("Trail Weight", &this->trail_weight, 0.1f, 0.0f,
+    ImGui::DragFloat("Trail Weight", &trail_weight, 0.1f, 0.0f,
             (std::numeric_limits<float>::max)());
     ImGui::DragFloat("Sense Spacing",
-            &this->sense_spacing, 1.0f, 0.0f, 180.0f);
-    ImGui::DragInt("Sense Distance", &this->sense_distance, 1, 1, 100);
-    ImGui::DragInt("Sense Size", &this->sense_size, 1, 1, 3);
+            &sense_spacing, 1.0f, 0.0f, 180.0f);
+    ImGui::DragInt("Sense Distance", &sense_distance, 1, 1, 100);
+    ImGui::DragInt("Sense Size", &sense_size, 1, 1, 3);
 
-    ImGui::DragFloat("Diffuse Speed", &this->diffuse_speed, 0.05f, 0.0f, 10.0f);
-    ImGui::DragFloat("Decay Speed", &this->decay_speed, 0.05f, 0.0f, 10.0f);
-    ImGui::DragInt("Blur Radius", &this->blur_radius, 1, 1, 5);
+    ImGui::DragFloat("Diffuse Speed", &diffuse_speed, 0.05f, 0.0f, 10.0f);
+    ImGui::DragFloat("Decay Speed", &decay_speed, 0.05f, 0.0f, 10.0f);
+    ImGui::DragInt("Blur Radius", &blur_radius, 1, 1, 5);
 
     ImGui::End();
 }

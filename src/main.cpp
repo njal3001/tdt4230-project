@@ -35,10 +35,9 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    glm::ivec2 size(1920, 1080);
+    SlimeSimulator simulator(1000000, "assets/images/leonid.jpg");
 
-    SlimeSimulator simulator(0.03f, size);
-
+    glm::ivec2 size = simulator.map_size();
     Graphics::set_aspect(size.x, size.y);
 
     Timer frame_timer;
@@ -69,15 +68,7 @@ int main()
         }
 
         render_shader.bind();
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        {
-            glBindTextureUnit(0, simulator.agents()->get_id());
-        }
-        else
-        {
-            glBindTextureUnit(0, simulator.trail()->get_id());
-        }
+        glBindTextureUnit(0, simulator.trail()->get_id());
 
         quad.render();
 
@@ -86,7 +77,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
+        // std::cout << "Frame: " << dt << " (FPS: " << 1.0f / dt << ")\n";
     }
 
     Graphics::shutdown();

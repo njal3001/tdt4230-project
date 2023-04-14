@@ -25,7 +25,6 @@ else()
     	set (PYTHON_CMD python)
     endif()
 endif()
-message("${PYTHON_CMD}")
 
 #
 # CMake setup
