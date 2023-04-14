@@ -3,13 +3,13 @@ project(slime-simulator)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(glfw3 3.3 REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glm REQUIRED)
+option (GLFW_INSTALL OFF)
+option (GLFW_BUILD_DOCS OFF)
+option (GLFW_BUILD_EXAMPLES OFF)
+option (GLFW_BUILD_TESTS OFF)
+add_subdirectory (lib/glfw)
 
-set(IMGUI_DIR src/external/imgui)
-set(STB_DIR src/external/stb)
+add_subdirectory(lib/glew/build/cmake)
 
 add_executable(slime-simulator
     src/main.cpp
@@ -24,19 +24,24 @@ add_executable(slime-simulator
     src/texture.cpp
     src/mesh.cpp
 
-    ${IMGUI_DIR}/imgui.cpp
-    ${IMGUI_DIR}/imgui_draw.cpp
-    ${IMGUI_DIR}/imgui_widgets.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp
-    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    lib/imgui/imgui.cpp
+    lib/imgui/imgui_draw.cpp
+    lib/imgui/imgui_widgets.cpp
+    lib/imgui/imgui_tables.cpp
+    lib/imgui/imgui_demo.cpp
+    lib/imgui/backends/imgui_impl_opengl3.cpp
+    lib/imgui/backends/imgui_impl_glfw.cpp
 )
 
-include_directories(. ${GLEW_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS}
-    private ${IMGUI_DIR} ${STB_DIR})
-target_link_libraries(slime-simulator glfw ${OPENGL_LIBRARIES}
-    GLEW::GLEW glm::glm)
+include_directories(.
+    lib/glew/include
+    lib/imgui/
+    lib/stb/
+    lib/glfw/include
+    lib/glm
+)
+
+target_link_libraries(slime-simulator glfw glew)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
