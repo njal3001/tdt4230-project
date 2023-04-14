@@ -1,5 +1,5 @@
 #include "slimesimulator.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <imgui.h>
 #include <cmath>
 #include <limits>

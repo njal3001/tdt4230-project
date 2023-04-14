@@ -1,5 +1,5 @@
 #include "texture.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 Texture::Texture(const glm::ivec2 &size, unsigned int internal_format)
     : size(size), internal_format(internal_format)

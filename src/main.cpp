@@ -1,5 +1,5 @@
 #include <iostream>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include "graphics.hpp"
@@ -13,6 +13,7 @@ int main()
 {
     if (!glfwInit())
     {
+        std::cout << "Could not initialize GLFW\n";
         return EXIT_FAILURE;
     }
 
@@ -20,18 +21,13 @@ int main()
             "Slime Simulator", NULL, NULL);
     if (!window)
     {
+        std::cout << "Could not create GLFW window\n";
         glfwTerminate();
         return EXIT_FAILURE;
     }
 
     glfwMakeContextCurrent(window);
-
-    GLenum err = glewInit();
-    if (err != GLEW_OK)
-    {
-        glfwTerminate();
-        return EXIT_FAILURE;
-    }
+    gladLoadGL();
 
     Graphics::initialize(window);
 
