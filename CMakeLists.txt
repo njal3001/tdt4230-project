@@ -7,9 +7,9 @@ option (GLFW_INSTALL OFF)
 option (GLFW_BUILD_DOCS OFF)
 option (GLFW_BUILD_EXAMPLES OFF)
 option (GLFW_BUILD_TESTS OFF)
-add_subdirectory (lib/glfw)
+add_subdirectory(lib/glfw)
 
-add_subdirectory(lib/glew/build/cmake)
+add_subdirectory(lib/glew-cmake)
 
 add_executable(slime-simulator
     src/main.cpp
@@ -34,14 +34,14 @@ add_executable(slime-simulator
 )
 
 include_directories(.
-    lib/glew/include
+    lib/glew-cmake/include
     lib/imgui/
     lib/stb/
     lib/glfw/include
     lib/glm
 )
 
-target_link_libraries(slime-simulator glfw glew)
+target_link_libraries(slime-simulator glfw libglew_static)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
