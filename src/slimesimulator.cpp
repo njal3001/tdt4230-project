@@ -21,7 +21,11 @@ SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
     int channels;
     float *data = stbi_loadf(image_path.c_str(),
             &size.x, &size.y, &channels, 4);
-    assert(data);
+    if (!data)
+    {
+        std::cout << "Could not load image " << image_path << '\n';
+        assert(false);
+    }
 
     trail_texture.initialize(size, GL_RGBA32F);
     diffused_trail_texture.initialize(size, GL_RGBA32F);
@@ -84,7 +88,7 @@ SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo_agent);
 
-    glm::uvec3 agent_work_group = glm::uvec3(std::ceil(num_agents / 64.0f),
+    glm::uvec3 agent_work_group = glm::uvec3(std::ceil(this->num_agents / 64.0f),
             1, 1);
     glm::uvec3 image_work_group = glm::uvec3(std::ceil(size.x / 8.0f),
             std::ceil(size.y / 8.0f), 1);
@@ -94,7 +98,7 @@ SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
 
     agent_shader.bind();
     agent_shader.set_ivec2(bounds_index, size);
-    agent_shader.set_int(num_agents_index, num_agents);
+    agent_shader.set_int(num_agents_index, this->num_agents);
 
     diffuse_shader.bind();
     diffuse_shader.set_ivec2(bounds_index, size);
