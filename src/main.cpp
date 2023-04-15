@@ -35,7 +35,7 @@ int main()
             "assets/shaders/render.frag");
     assert(render_shader.valid());
 
-    SlimeSimulator simulator(1000000, "assets/images/leonid.jpg");
+    SlimeSimulator simulator(1000000, "assets/images/leonid2.jpg");
 
     glm::ivec2 size = simulator.map_size();
     Graphics::set_aspect(size.x, size.y);

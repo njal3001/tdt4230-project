@@ -87,8 +87,8 @@ float sense(Agent agent, float angle_offset)
     {
         for (int oy = -sense_size; oy <= sense_size; oy++)
         {
-            int x = int(mid(0.0, sense_center.x + ox, bounds.x - 1.0));
-            int y = int(mid(0.0, sense_center.y + oy, bounds.y - 1.0));
+            int x = int(mod(sense_center.x + ox, bounds.x));
+            int y = int(mod(sense_center.y + oy, bounds.y));
 
             vec4 diff = agent.color - imageLoad(trail_image, ivec2(x, y));
             sum -= length(diff);
