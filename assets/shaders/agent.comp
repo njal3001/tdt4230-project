@@ -57,23 +57,21 @@ float scale_to_unit(uint value)
     return value / 4294967295.0;
 }
 
+float approach(float current, float target, float amount)
+{
+    float dist = target - current;
+    return current + sign(dist) * min(abs(dist), amount);
+}
+
 vec4 approach(vec4 current, vec4 target, float amount)
 {
-    vec4 diff = target - current;
-    float dist = length(diff);
+    vec4 result;
+    result.x = approach(current.x, target.x, amount);
+    result.y = approach(current.y, target.y, amount);
+    result.z = approach(current.z, target.z, amount);
+    result.w = approach(current.w, target.w, amount);
 
-    if (dist == 0.0)
-    {
-        return current;
-    }
-    if (dist <= amount)
-    {
-        return target;
-    }
-
-    vec4 dir = normalize(diff);
-
-    return current + dir * amount;
+    return result;
 }
 
 float sense(Agent agent, float angle_offset)
