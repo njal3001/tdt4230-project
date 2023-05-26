@@ -7,7 +7,7 @@ class Mesh
 public:
     struct Vertex
     {
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec2 uv;
     };
 
@@ -22,5 +22,6 @@ public:
 
     void render() const;
 
-    static Mesh quad(const glm::vec2 &position, const glm::vec2 &size);
+    static Mesh quad(const glm::vec3 &position, const glm::vec2 &size);
+    static Mesh cube(const glm::vec3 &position, float size);
 };

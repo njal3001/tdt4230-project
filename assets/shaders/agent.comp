@@ -6,9 +6,10 @@ layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent
 {
-    vec2 position;
-    float angle;
-    float padding;
+    vec3 position;
+    float theta;
+    float phi;
+    vec3 padding;
     vec4 color;
 };
 
@@ -16,10 +17,10 @@ layout (std430, binding = 0) buffer agent_buffer {
     Agent agents[];
 };
 
-layout(rgba32f, binding = 0) uniform image2D trail_image;
-layout(rgba32f, binding = 1) uniform image2D diffused_trail_image;
+layout(rgba32f, binding = 0) uniform image3D trail_image;
+layout(rgba32f, binding = 1) uniform image3D diffused_trail_image;
 
-uniform layout(location = 0) ivec2 bounds;
+uniform layout(location = 0) ivec3 bounds;
 uniform layout(location = 1) float dt;
 uniform layout(location = 2) float time;
 uniform layout(location = 3) int num_agents;
@@ -74,29 +75,30 @@ vec4 approach(vec4 current, vec4 target, float amount)
     return result;
 }
 
-float sense(Agent agent, float angle_offset)
-{
-    float sense_angle = agent.angle + angle_offset;
-    vec2 sense_direction = vec2(cos(sense_angle), sin(sense_angle));
-
-    ivec2 sense_center =
-        ivec2(agent.position + sense_direction * sense_distance);
-
-    float sum = 0.0;
-    for (int ox = -sense_size; ox <= sense_size; ox++)
-    {
-        for (int oy = -sense_size; oy <= sense_size; oy++)
-        {
-            int x = int(mod(sense_center.x + ox, bounds.x));
-            int y = int(mod(sense_center.y + oy, bounds.y));
-
-            vec4 diff = agent.color - imageLoad(trail_image, ivec2(x, y));
-            sum -= length(diff);
-        }
-    }
-
-    return sum;
-}
+// float sense(Agent agent, float angle_offset)
+// {
+//     float sense_angle = agent.angle + angle_offset;
+//     vec3 sense_direction = vec3(cos(sense_angle), sin(sense_angle), 0.0);
+//
+//     ivec3 sense_center =
+//         ivec3(agent.position + sense_direction * sense_distance);
+//
+//     float sum = 0.0;
+//     for (int ox = -sense_size; ox <= sense_size; ox++)
+//     {
+//         for (int oy = -sense_size; oy <= sense_size; oy++)
+//         {
+//             int x = int(mod(sense_center.x + ox, bounds.x));
+//             int y = int(mod(sense_center.y + oy, bounds.y));
+//             int z = 0;
+//
+//             vec4 diff = agent.color - imageLoad(trail_image, ivec3(x, y, z));
+//             sum -= length(diff);
+//         }
+//     }
+//
+//     return sum;
+// }
 
 void main()
 {
@@ -113,49 +115,53 @@ void main()
                 agent.position.y * bounds.x +
                 time * 10000.0));
 
-    float random_angle = scale_to_unit(rand) * 2.0 * PI;
+    // float random_angle = scale_to_unit(rand) * 2.0 * PI;
 
-    vec2 new_position = agent.position;
-    float new_angle = agent.angle;
+    vec3 new_position = agent.position;
+    // float new_angle = agent.angle;
 
-    vec2 velocity = vec2(cos(agent.angle), sin(agent.angle)) * move_speed;
+    vec3 velocity;
+    velocity.x = sin(agent.phi) * cos(agent.theta) * move_speed;
+    velocity.y = sin(agent.phi) * sin(agent.theta) * move_speed;
+    velocity.z = cos(agent.phi) * move_speed;
     new_position += velocity * dt;
 
     new_position.x = mod(new_position.x, bounds.x);
     new_position.y = mod(new_position.y, bounds.y);
+    new_position.z = mod(new_position.z, bounds.z);
 
-    ivec2 new_pixel_position = ivec2(new_position);
+    ivec3 new_pixel_position = ivec3(new_position);
 
     vec4 prev_trail = imageLoad(trail_image, new_pixel_position);
     vec4 new_trail = approach(prev_trail, agent.color, trail_weight * dt);
     imageStore(trail_image, new_pixel_position, new_trail);
 
-    float sense_spacing_rad = to_rad(sense_spacing);
-    float sense_forward = sense(agent, 0.0);
-    float sense_right = sense(agent, sense_spacing_rad);
-    float sense_left = sense(agent, -sense_spacing_rad);
-
-    float turn_amount_rad = to_rad(turn_amount);
-    float random_turn_weight = scale_to_unit(rand);
-
-    if (sense_forward > sense_right && sense_forward > sense_left)
-    {
-        new_angle += 0.0;
-    }
-    else if (sense_forward < sense_right && sense_forward < sense_left)
-    {
-        new_angle += (1.0 - 2.0 * step(random_turn_weight, 0.5)) *
-            turn_amount_rad;
-    }
-    else if (sense_left < sense_right)
-    {
-        new_angle += turn_amount_rad;
-    }
-    else if (sense_right < sense_left)
-    {
-        new_angle -= turn_amount_rad;
-    }
+    // float sense_spacing_rad = to_rad(sense_spacing);
+    // float sense_forward = sense(agent, 0.0);
+    // float sense_right = sense(agent, sense_spacing_rad);
+    // float sense_left = sense(agent, -sense_spacing_rad);
+    //
+    // float turn_amount_rad = to_rad(turn_amount);
+    // float random_turn_weight = scale_to_unit(rand);
+    //
+    // if (sense_forward > sense_right && sense_forward > sense_left)
+    // {
+    //     new_angle += 0.0;
+    // }
+    // else if (sense_forward < sense_right && sense_forward < sense_left)
+    // {
+    //     new_angle += (1.0 - 2.0 * step(random_turn_weight, 0.5)) *
+    //         turn_amount_rad;
+    // }
+    // else if (sense_left < sense_right)
+    // {
+    //     new_angle += turn_amount_rad;
+    // }
+    // else if (sense_right < sense_left)
+    // {
+    //     new_angle -= turn_amount_rad;
+    // }
 
     agents[id].position = new_position;
-    agents[id].angle = new_angle;
+    // agents[id].angle = new_angle;
 }

@@ -142,6 +142,7 @@ void Graphics::initialize(GLFWwindow *window)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
 
     // Disable VSync
     glfwSwapInterval(0);

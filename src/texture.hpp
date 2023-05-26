@@ -2,23 +2,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-class Texture
+class Texture3D
 {
 private:
     unsigned int id;
-    glm::ivec2 size;
+    glm::ivec3 size;
     unsigned int internal_format;
 
 public:
-    Texture();
-    ~Texture();
+    Texture3D();
+    ~Texture3D();
 
-    void initialize(const glm::ivec2 &size, unsigned int internal_format);
+    void initialize(const glm::ivec3 &size, unsigned int internal_format);
 
     void set_data(const void *data) const;
     void set_sub_data(const void *data,
-            int ox, int oy, int width, int height) const;
-    void copy(const Texture *source) const;
+            int ox, int oy, int oz, int width, int height, int depth) const;
+    void copy(const Texture3D *source) const;
 
     void bind_to_unit(unsigned int unit) const;
     unsigned int get_id() const;

@@ -34,14 +34,14 @@ Shader::Shader(const std::vector<Source> &sources)
     this->id = glCreateProgram();
 
     std::vector<unsigned int> shader_ids;
-    for (int i = 0; i < sources.size(); i++)
+    for (size_t i = 0; i < sources.size(); i++)
     {
         const Source &source = sources[i];
         unsigned int shader_id = compile_shader(source.path, source.type);
 
         if (!shader_id)
         {
-            for (int j = 0; j < i; j++)
+            for (size_t j = 0; j < i; j++)
             {
                 glDeleteShader(shader_ids[j]);
             }
@@ -119,6 +119,11 @@ void Shader::set_vec3(unsigned int location, const glm::vec3 &value) const
     glUniform3fv(location, 1, glm::value_ptr(value));
 }
 
+void Shader::set_ivec3(unsigned int location, const glm::ivec3 &value) const
+{
+    glUniform3iv(location, 1, glm::value_ptr(value));
+}
+
 void Shader::set_vec4(unsigned int location, const glm::vec4 &value) const
 {
     glUniform4fv(location, 1, glm::value_ptr(value));
@@ -152,6 +157,11 @@ void Shader::set_ivec2(const std::string &name, const glm::ivec2 &value) const
 void Shader::set_vec3(const std::string &name, const glm::vec3 &value) const
 {
     this->set_vec3(glGetUniformLocation(this->id, name.c_str()), value);
+}
+
+void Shader::set_ivec3(const std::string &name, const glm::ivec3 &value) const
+{
+    this->set_ivec3(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
 void Shader::set_vec4(const std::string &name, const glm::vec4 &value) const

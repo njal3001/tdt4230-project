@@ -8,21 +8,22 @@ class SlimeSimulator
 private:
     struct Agent
     {
-        glm::vec2 position;
-        float angle;
-        float padding;
+        glm::vec3 position;
+        float theta;
+        float phi;
+        glm::vec3 padding;
         glm::vec4 color;
     };
 
 private:
-    glm::ivec2 size;
+    glm::ivec3 size;
     int num_agents;
 
     ComputeShader agent_shader;
     ComputeShader diffuse_shader;
 
-    Texture trail_texture;
-    Texture diffused_trail_texture;
+    Texture3D trail_texture;
+    Texture3D diffused_trail_texture;
 
     unsigned int vbo_agent;
 
@@ -59,15 +60,15 @@ private:
     int blur_radius = 1;
 
 public:
-    SlimeSimulator(int num_agents, const std::string &image_path);
+    SlimeSimulator(int num_agents, const glm::ivec3 &size);
     ~SlimeSimulator();
 
     void update(float dt);
 
-    glm::ivec2 map_size() const;
-    const Texture *trail() const;
+    const Texture3D *trail() const;
 
     void update_debug_window();
 
+private:
     void step_update(float dt);
 };

@@ -10,71 +10,44 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
-    : num_agents(0),
+SlimeSimulator::SlimeSimulator(int num_agents, const glm::ivec3 &size)
+    : size(size), num_agents(num_agents),
     agent_shader("assets/shaders/agent.comp"),
     diffuse_shader("assets/shaders/diffuse.comp")
 {
     assert(agent_shader.valid());
     assert(diffuse_shader.valid());
 
-    int channels;
-    float *data = stbi_loadf(image_path.c_str(),
-            &size.x, &size.y, &channels, 4);
-    if (!data)
-    {
-        std::cout << "Could not load image " << image_path << '\n';
-        assert(false);
-    }
-
     trail_texture.initialize(size, GL_RGBA32F);
     diffused_trail_texture.initialize(size, GL_RGBA32F);
 
-    std::vector<glm::vec4> trail_pixels(size.x * size.y,
-            glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    std::vector<glm::vec4> trail_pixels(size.x * size.y * size.z,
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-    this->num_agents = std::max(num_agents, size.x * size.y);
+    float maxrad = std::min(size.x, std::min(size.y, size.z)) / 2.0f;
+    glm::vec3 center = glm::vec3(size) / 2.0f;
 
     std::vector<Agent> agents(this->num_agents);
-    for (int y = 0; y < size.y; y++)
+    for (auto &agent : agents)
     {
-        for (int x = 0; x < size.x; x++)
-        {
-            Agent &agent = agents[y * size.x + x];
-            agent.position.x = x + 0.5f;
-            agent.position.y = y + 0.5f;
-            agent.angle = Calc::frand() * 2.0f * glm::pi<float>();
+        float randtheta = Calc::frand() * 2.0f * glm::pi<float>();
+        float randphi = Calc::frand() * 2.0f * glm::pi<float>();
+        float r = Calc::frand() * maxrad;
+        agent.position.x = center.x +
+            glm::sin(randphi) * glm::cos(randtheta) * r;
+        agent.position.y = center.y +
+            glm::sin(randphi) * glm::sin(randtheta) * r;
+        agent.position.z = center.z + glm::cos(randphi) * r;
+        agent.theta = randtheta + glm::pi<float>();
+        agent.phi = randphi + glm::pi<float>();
 
-            int y_inverse = size.y - y - 1;
-            int offset = (y_inverse * size.x + x) * 4;
-            agent.color.r = data[offset + 0];
-            agent.color.g = data[offset + 1];
-            agent.color.b = data[offset + 2];
-            agent.color.a = data[offset + 3];
+        agent.color = glm::vec4(1.0f);
 
-            trail_pixels[y * size.x + x] = agent.color;
-        }
-    }
+        int px = std::floor(agent.position.x);
+        int py = std::floor(agent.position.y);
+        int pz = std::floor(agent.position.z);
 
-    for (int i = size.x * size.y; i < this->num_agents; i++)
-    {
-        Agent &agent = agents[i];
-
-        int rx = Calc::randrange(0, size.x);
-        int ry = Calc::randrange(0, size.y);
-
-        agent.position.x = rx + 0.5f;
-        agent.position.y = ry + 0.5f;
-        agent.angle = Calc::frand() * 2.0f * glm::pi<float>();
-
-        int y_inverse = size.y - ry - 1;
-        int offset = (y_inverse * size.x + rx) * 4;
-        agent.color.r = data[offset + 0];
-        agent.color.g = data[offset + 1];
-        agent.color.b = data[offset + 2];
-        agent.color.a = data[offset + 3];
-
-        trail_pixels[ry * size.x + rx] = agent.color;
+        trail_pixels[px + py * size.x + pz * size.y * size.x] = agent.color;
     }
 
     trail_texture.set_data(trail_pixels.data());
@@ -88,22 +61,13 @@ SlimeSimulator::SlimeSimulator(int num_agents, const std::string &image_path)
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo_agent);
 
-    glm::uvec3 agent_work_group = glm::uvec3(std::ceil(this->num_agents / 64.0f),
-            1, 1);
+    glm::uvec3 agent_work_group =
+        glm::uvec3(std::ceil(this->num_agents / 64.0f), 1, 1);
     glm::uvec3 image_work_group = glm::uvec3(std::ceil(size.x / 8.0f),
             std::ceil(size.y / 8.0f), 1);
 
     agent_shader.set_work_group(agent_work_group);
     diffuse_shader.set_work_group(image_work_group);
-
-    agent_shader.bind();
-    agent_shader.set_ivec2(bounds_index, size);
-    agent_shader.set_int(num_agents_index, this->num_agents);
-
-    diffuse_shader.bind();
-    diffuse_shader.set_ivec2(bounds_index, size);
-
-    stbi_image_free(data);
 }
 
 SlimeSimulator::~SlimeSimulator()
@@ -123,6 +87,8 @@ void SlimeSimulator::update(float dt)
 void SlimeSimulator::step_update(float dt)
 {
     agent_shader.bind();
+    agent_shader.set_ivec3(bounds_index, size);
+    agent_shader.set_int(num_agents_index, num_agents);
     agent_shader.set_float(dt_index, dt);
     agent_shader.set_float(time_index, Timer::time());
     agent_shader.set_float(move_speed_index, move_speed);
@@ -134,6 +100,7 @@ void SlimeSimulator::step_update(float dt)
     agent_shader.dispatch_and_wait();
 
     diffuse_shader.bind();
+    diffuse_shader.set_ivec3(bounds_index, size);
     diffuse_shader.set_float(dt_index, dt);
     diffuse_shader.set_float(time_index, Timer::time());
     diffuse_shader.set_float(diffuse_speed_index,
@@ -144,12 +111,7 @@ void SlimeSimulator::step_update(float dt)
     trail_texture.copy(&diffused_trail_texture);
 }
 
-glm::ivec2 SlimeSimulator::map_size() const
-{
-    return size;
-}
-
-const Texture *SlimeSimulator::trail() const
+const Texture3D *SlimeSimulator::trail() const
 {
     return &trail_texture;
 }

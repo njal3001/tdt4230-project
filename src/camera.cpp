@@ -9,7 +9,7 @@ Camera::Camera(float fov, float aspect, float znear, float zfar)
     znear(znear), zfar(zfar)
 {}
 
-void Camera::move(glm::vec3 delta)
+void Camera::move(const glm::vec3 &delta)
 {
     this->position += delta;
 }
@@ -36,9 +36,27 @@ void Camera::move_left(float amount)
     this->move_right(-amount);
 }
 
-void Camera::rotate(float rad, glm::vec3 axis)
+void Camera::rotate(float rad, const glm::vec3 &axis)
 {
     this->rotation = glm::rotate(glm::mat4(1.0f), rad, axis) * this->rotation;
+}
+
+void Camera::rotate_around(float rad, glm::vec3 axis, const glm::vec3 &point)
+{
+    glm::mat4 m = glm::translate(
+            glm::rotate(glm::translate(glm::mat4(1.0f), -point), rad, axis), point);
+
+    this->position = glm::vec4(this->position, 1.0f) * m;
+}
+
+void Camera::lookat(const glm::vec3 &point, const glm::vec3 &up)
+{
+    this->rotation = glm::lookAt(this->position, point, up);
+}
+
+glm::vec3 Camera::get_position() const
+{
+    return this->position;
 }
 
 glm::mat4 Camera::view() const

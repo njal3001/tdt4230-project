@@ -29,6 +29,7 @@ public:
     void set_vec2(unsigned int location, const glm::vec2 &value) const;
     void set_ivec2(unsigned int location, const glm::ivec2 &value) const;
     void set_vec3(unsigned int location, const glm::vec3 &value) const;
+    void set_ivec3(unsigned int location, const glm::ivec3 &value) const;
     void set_vec4(unsigned int location, const glm::vec4 &value) const;
     void set_mat4(unsigned int location, const glm::mat4 &value) const;
 
@@ -37,6 +38,7 @@ public:
     void set_vec2(const std::string &name, const glm::vec2 &value) const;
     void set_ivec2(const std::string &name, const glm::ivec2 &value) const;
     void set_vec3(const std::string &name, const glm::vec3 &value) const;
+    void set_ivec3(const std::string &name, const glm::ivec3 &value) const;
     void set_vec4(const std::string &name, const glm::vec4 &value) const;
     void set_mat4(const std::string &name, const glm::mat4 &value) const;
 };

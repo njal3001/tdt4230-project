@@ -1,16 +1,16 @@
 #include "texture.hpp"
 #include <glad/glad.h>
 
-Texture::Texture()
+Texture3D::Texture3D()
     : id(0), size(0), internal_format(0)
 {}
 
-void Texture::initialize(const glm::ivec2 &size, unsigned int internal_format)
+void Texture3D::initialize(const glm::ivec3 &size, unsigned int internal_format)
 {
     this->size = size;
     this->internal_format = internal_format;
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &id);
+    glCreateTextures(GL_TEXTURE_3D, 1, &id);
     glTextureParameteri(id,
             GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(id,
@@ -19,11 +19,11 @@ void Texture::initialize(const glm::ivec2 &size, unsigned int internal_format)
             GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(id,
             GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureStorage2D(id, 1, internal_format,
-            size.x, size.y);
+    glTextureStorage3D(id, 1, internal_format,
+            size.x, size.y, size.z);
 }
 
-Texture::~Texture()
+Texture3D::~Texture3D()
 {
     if (id)
     {
@@ -31,13 +31,13 @@ Texture::~Texture()
     }
 }
 
-void Texture::set_data(const void *data) const
+void Texture3D::set_data(const void *data) const
 {
-    this->set_sub_data(data, 0, 0, this->size.x, this->size.y);
+    this->set_sub_data(data, 0, 0, 0, this->size.x, this->size.y, this->size.z);
 }
 
-void Texture::set_sub_data(const void *data,
-        int ox, int oy, int width, int height) const
+void Texture3D::set_sub_data(const void *data,
+        int ox, int oy, int oz, int width, int height, int depth) const
 {
     assert(id);
 
@@ -56,20 +56,20 @@ void Texture::set_sub_data(const void *data,
             break;
     }
 
-    glTextureSubImage2D(this->id, 0, ox, oy, width,
-            height, format, type, data);
+    glTextureSubImage3D(this->id, 0, ox, oy, oz, width,
+            height, depth, format, type, data);
 }
 
-void Texture::copy(const Texture *source) const
+void Texture3D::copy(const Texture3D *source) const
 {
     assert(id);
 
-    glCopyImageSubData(source->get_id(), GL_TEXTURE_2D,
-            0, 0, 0, 0, this->id, GL_TEXTURE_2D, 0,
-            0, 0, 0, this->size.x, this->size.y, 1);
+    glCopyImageSubData(source->get_id(), GL_TEXTURE_3D,
+            0, 0, 0, 0, this->id, GL_TEXTURE_3D, 0,
+            0, 0, 0, this->size.x, this->size.y, this->size.z);
 }
 
-void Texture::bind_to_unit(unsigned int unit) const
+void Texture3D::bind_to_unit(unsigned int unit) const
 {
     assert(id);
 
@@ -77,7 +77,7 @@ void Texture::bind_to_unit(unsigned int unit) const
             GL_READ_WRITE, this->internal_format);
 }
 
-unsigned int Texture::get_id() const
+unsigned int Texture3D::get_id() const
 {
     return this->id;
 }
